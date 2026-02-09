@@ -1,48 +1,135 @@
 # Local Ledger Backend
 
-这是一个基于 Spring Boot 的简单后端服务。
+A simple backend service based on Spring Boot for managing investment profit and loss.
 
-## 技术栈
+## Technology Stack
 
 - Java 17
 - Spring Boot 3.2.0
 - Maven
 
-## 快速开始
+## Getting Started
 
-### 前置要求
+### Prerequisites
 
-- JDK 17 或更高版本
-- Maven 3.6+
+Before running the project, ensure the following environment is installed:
 
-### 运行项目
+- **JDK 17 or higher**
+  ```bash
+  # Check Java version
+  java -version
+  ```
+  
+- **Maven 3.6+**
+  ```bash
+  # Check Maven version
+  mvn -version
+  ```
+
+### Running the Application
+
+#### Option 1: Run Directly with Maven (Recommended for Development)
+
+This is the simplest approach, suitable for development and debugging:
 
 ```bash
-# 进入backend目录
+# Navigate to backend directory
 cd backend
 
-# 使用Maven运行
+# Run using Maven Spring Boot plugin
 mvn spring-boot:run
 ```
 
-或者：
+#### Option 2: Build and Run JAR
+
+This approach compiles and packages the application into a JAR file before running, suitable for production environments:
 
 ```bash
-# 编译打包
+# Navigate to backend directory
+cd backend
+
+# Clean and package the project
 mvn clean package
 
-# 运行jar包
+# Run the generated JAR file
 java -jar target/backend-1.0.0.jar
 ```
 
-### 访问接口
+#### Option 3: Quick Start with Skipping Tests
 
-服务启动后，默认运行在 `http://localhost:8080`
+If you have test cases but want to start quickly:
 
-- 健康检查: `http://localhost:8080/api/health`
-- 欢迎接口: `http://localhost:8080/api/hello`
+```bash
+# Run with Maven and skip tests
+cd backend
+mvn spring-boot:run -DskipTests
+```
 
-## 项目结构
+Or skip tests during packaging:
+
+```bash
+# Package with skipping tests
+mvn clean package -DskipTests
+java -jar target/backend-1.0.0.jar
+```
+
+### Verifying the Service
+
+After the service starts, it runs by default at `http://localhost:8080`
+
+#### 1. Check Console Logs
+
+Upon successful startup, the console should display information similar to:
+```
+Started Application in X.XXX seconds
+```
+
+#### 2. Test API Endpoints
+
+- **Health Check Endpoint**: 
+  ```bash
+  curl http://localhost:8080/api/health
+  ```
+  Or open in browser: `http://localhost:8080/api/health`
+
+- **Hello Endpoint**: 
+  ```bash
+  curl http://localhost:8080/api/hello
+  ```
+  Or open in browser: `http://localhost:8080/api/hello`
+
+### Troubleshooting
+
+#### Port Already in Use
+
+If port 8080 is already occupied, modify the `src/main/resources/application.properties` file:
+
+```properties
+server.port=8081
+```
+
+#### Java Version Mismatch
+
+Ensure you are using JDK 17 or higher, as required by the project configuration.
+
+#### Slow Maven Dependency Download
+
+The first run will download dependencies, which may take some time. If the download is too slow, consider configuring a Maven mirror.
+
+### Integration with Frontend
+
+After the backend starts (default `http://localhost:8080`), you can start the frontend project:
+
+```bash
+# In another terminal window
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will start at `http://localhost:3000` and automatically proxy API requests to the backend.
+
+## Project Structure
 
 ```
 backend/
@@ -51,11 +138,11 @@ backend/
 │   │   ├── java/
 │   │   │   └── com/
 │   │   │       └── localledger/
-│   │   │           ├── Application.java          # 主应用入口
+│   │   │           ├── Application.java          # Main application entry point
 │   │   │           └── controller/
-│   │   │               └── HelloController.java  # 示例控制器
+│   │   │               └── HelloController.java  # Sample controller
 │   │   └── resources/
-│   │       └── application.properties            # 配置文件
+│   │       └── application.properties            # Configuration file
 │   └── test/
-└── pom.xml                                        # Maven配置
+└── pom.xml                                        # Maven configuration
 ```
