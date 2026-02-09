@@ -1,96 +1,260 @@
 # Local Ledger Frontend
 
-投资盈亏管理系统前端项目
+A frontend application for managing investment profit and loss.
 
-## 技术栈
+## Technology Stack
 
-- **React 18** - 前端框架
-- **Ant Design 5** - UI组件库
-- **Vite** - 构建工具
-- **Axios** - HTTP客户端
-- **Day.js** - 日期处理
+- **React 18** - Frontend framework
+- **Ant Design 5** - UI component library
+- **Vite** - Build tool
+- **Axios** - HTTP client
+- **Day.js** - Date manipulation library
 
-## 快速开始
+## Getting Started
 
-### 安装依赖
+### Prerequisites
+
+Before running the project, ensure you have:
+
+- **Node.js >= 16.0.0**
+  ```bash
+  # Check Node.js version
+  node -v
+  ```
+
+- **npm or yarn**
+  ```bash
+  # Check npm version
+  npm -v
+  ```
+
+### Installation
 
 ```bash
+# Navigate to frontend directory
 cd frontend
+
+# Install dependencies
 npm install
 ```
 
-### 开发模式
+### Running in Development Mode
 
 ```bash
+# Start development server
 npm run dev
 ```
 
-项目将在 `http://localhost:3000` 启动
+The application will start at `http://localhost:3000`
 
-### 构建生产版本
+### Building for Production
 
 ```bash
+# Build the project
 npm run build
 ```
 
-构建产物将生成在 `dist` 目录
+Build artifacts will be generated in the `dist` directory.
 
-### 预览生产构建
+### Preview Production Build
 
 ```bash
+# Preview the production build locally
 npm run preview
 ```
 
-## 项目结构
+## Debugging Guide
+
+### Development Tools
+
+#### 1. Browser DevTools
+
+**Chrome/Edge DevTools:**
+- Press `F12` or `Ctrl+Shift+I` (Windows/Linux) / `Cmd+Option+I` (Mac)
+- **Console Tab**: View logs, errors, and warnings
+- **Network Tab**: Monitor API requests and responses
+- **React DevTools**: Install the React Developer Tools extension for component inspection
+
+**Useful Console Commands:**
+```javascript
+// Check if backend is accessible
+fetch('/api/health').then(r => r.json()).then(console.log)
+
+// View current React version
+console.log(React.version)
+```
+
+#### 2. Vite Hot Module Replacement (HMR)
+
+Vite provides instant feedback during development:
+- Changes to `.jsx` files trigger automatic component updates
+- CSS changes apply immediately without page reload
+- Check terminal for compilation errors
+
+#### 3. Network Debugging
+
+**API Proxy Configuration** (in `vite.config.js`):
+```javascript
+proxy: {
+  '/api': {
+    target: 'http://localhost:8080',
+    changeOrigin: true
+  }
+}
+```
+
+**Testing API Endpoints:**
+```bash
+# Test backend health check
+curl http://localhost:3000/api/health
+
+# Or use browser
+open http://localhost:3000/api/hello
+```
+
+#### 4. Common Debugging Scenarios
+
+**Backend Connection Issues:**
+1. Verify backend is running: `curl http://localhost:8080/api/health`
+2. Check proxy configuration in `vite.config.js`
+3. Review browser Network tab for failed requests
+
+**Component Not Updating:**
+1. Check browser console for errors
+2. Verify component state management
+3. Use React DevTools to inspect component props and state
+
+**Build Errors:**
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Clear Vite cache
+rm -rf node_modules/.vite
+npm run dev
+```
+
+### IDE Configuration
+
+**VS Code Recommended Extensions:**
+- ESLint
+- Prettier
+- ES7+ React/Redux/React-Native snippets
+- Auto Rename Tag
+
+**VS Code Debug Configuration** (`.vscode/launch.json`):
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Chrome",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    }
+  ]
+}
+```
+
+## Project Structure
 
 ```
 frontend/
 ├── src/
-│   ├── main.jsx              # 应用入口
-│   ├── App.jsx               # 主应用组件
-│   ├── App.css               # 应用样式
-│   └── index.css             # 全局样式
-├── index.html                # HTML模板
-├── vite.config.js            # Vite配置
-└── package.json              # 项目配置
+│   ├── main.jsx              # Application entry point
+│   ├── App.jsx               # Main application component
+│   ├── App.css               # Application styles
+│   └── index.css             # Global styles
+├── index.html                # HTML template
+├── vite.config.js            # Vite configuration
+└── package.json              # Project configuration
 ```
 
-## 功能特性
+## Features
 
-### 当前功能
+### Current Features
 
-- ✅ 投资统计仪表盘
-- ✅ 投资记录列表展示
-- ✅ 盈亏数据可视化
-- ✅ 后端服务连接状态检测
-- ✅ 响应式布局
+- Investment statistics dashboard
+- Investment records list display
+- Profit and loss data visualization
+- Backend service connection status detection
+- Responsive layout
 
-### 待开发功能
+### Planned Features
 
-- 📝 添加/编辑/删除投资记录
-- 📊 图表分析（收益趋势、资产分布等）
-- 🔍 数据筛选和搜索
-- 📤 数据导入导出
-- ⚙️ 系统设置
+- Add/Edit/Delete investment records
+- Chart analysis (profit trends, asset distribution, etc.)
+- Data filtering and search
+- Data import/export
+- System settings
 
-## API接口
+## API Endpoints
 
-前端通过代理访问后端API（配置在 `vite.config.js`）：
+The frontend accesses backend APIs through proxy (configured in `vite.config.js`):
 
-- `/api/health` - 健康检查
-- `/api/hello` - 测试接口
+- `/api/health` - Health check endpoint
+- `/api/hello` - Test endpoint
 
-更多接口将在后续开发中添加。
+More endpoints will be added during development.
 
-## 开发说明
+## Development Guidelines
 
-1. 确保后端服务运行在 `http://localhost:8080`
-2. 前端开发服务器会自动代理 `/api` 请求到后端
-3. 使用 Ant Design 组件库进行UI开发
-4. 遵循 React Hooks 最佳实践
+1. Ensure backend service is running at `http://localhost:8080`
+2. Frontend dev server automatically proxies `/api` requests to backend
+3. Use Ant Design components for UI development
+4. Follow React Hooks best practices
+5. Keep components small and focused
+6. Use meaningful variable and function names
 
-## 注意事项
+## Troubleshooting
 
-- Node.js 版本要求：>= 16.0.0
-- 首次运行需要先安装依赖
-- 开发时确保后端服务已启动
+### Port Already in Use
+
+If port 3000 is occupied, modify `vite.config.js`:
+
+```javascript
+server: {
+  port: 3001,  // Change to another port
+  // ...
+}
+```
+
+### Dependency Installation Issues
+
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Use alternative registry (if needed)
+npm install --registry=https://registry.npmjs.org/
+```
+
+### Hot Reload Not Working
+
+1. Check if file is saved properly
+2. Restart dev server: `Ctrl+C` then `npm run dev`
+3. Clear browser cache and reload
+
+## Integration with Backend
+
+### Full Stack Development Workflow
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+**Verify Integration:**
+1. Backend: `http://localhost:8080/api/health`
+2. Frontend: `http://localhost:3000`
+3. Frontend API call: `http://localhost:3000/api/health` (proxied to backend)
