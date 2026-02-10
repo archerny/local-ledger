@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   DashboardOutlined,
   DollarOutlined,
@@ -9,22 +10,22 @@ import {
 export const menuItems = [
   {
     key: '1',
-    icon: <DashboardOutlined />,
+    icon: React.createElement(DashboardOutlined),
     label: '仪表盘',
   },
   {
     key: '2',
-    icon: <DollarOutlined />,
+    icon: React.createElement(DollarOutlined),
     label: '出入金记录',
   },
   {
     key: '3',
-    icon: <LineChartOutlined />,
+    icon: React.createElement(LineChartOutlined),
     label: '盈亏分析',
   },
   {
     key: '4',
-    icon: <SettingOutlined />,
+    icon: React.createElement(SettingOutlined),
     label: '系统设置',
   },
 ];

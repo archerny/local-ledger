@@ -1,3 +1,4 @@
+import React from 'react';
 import { RiseOutlined } from '@ant-design/icons';
 
 // 投资统计数据
@@ -18,7 +19,7 @@ export const statistics = [
     title: '总盈亏',
     value: 25000,
     prefix: '¥',
-    suffix: <RiseOutlined />,
+    suffix: React.createElement(RiseOutlined),
     valueStyle: { color: '#3f8600' },
   },
   {
