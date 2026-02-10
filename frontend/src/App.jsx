@@ -133,6 +133,58 @@ function App() {
     },
   ];
 
+  // 出入金记录数据
+  const cashFlowData = [
+    {
+      key: '1',
+      date: '2024-01-15',
+      broker: '富途证券',
+      type: '入金',
+      amount: 50000,
+      currency: 'CNY',
+    },
+    {
+      key: '2',
+      date: '2024-01-20',
+      broker: '老虎证券',
+      type: '入金',
+      amount: 10000,
+      currency: 'USD',
+    },
+    {
+      key: '3',
+      date: '2024-02-05',
+      broker: '富途证券',
+      type: '出金',
+      amount: 15000,
+      currency: 'CNY',
+    },
+    {
+      key: '4',
+      date: '2024-02-10',
+      broker: '盈透证券',
+      type: '入金',
+      amount: 5000,
+      currency: 'USD',
+    },
+    {
+      key: '5',
+      date: '2024-02-18',
+      broker: '老虎证券',
+      type: '出金',
+      amount: 3000,
+      currency: 'USD',
+    },
+    {
+      key: '6',
+      date: '2024-03-01',
+      broker: '富途证券',
+      type: '入金',
+      amount: 30000,
+      currency: 'CNY',
+    },
+  ];
+
   const columns = [
     {
       title: '名称',
@@ -202,6 +254,64 @@ function App() {
     },
   ];
 
+  // 出入金记录表格列定义
+  const cashFlowColumns = [
+    {
+      title: '日期',
+      dataIndex: 'date',
+      key: 'date',
+      sorter: (a, b) => new Date(a.date) - new Date(b.date),
+    },
+    {
+      title: '券商',
+      dataIndex: 'broker',
+      key: 'broker',
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type) => (
+        <Tag color={type === '入金' ? 'green' : 'orange'}>{type}</Tag>
+      ),
+      filters: [
+        { text: '入金', value: '入金' },
+        { text: '出金', value: '出金' },
+      ],
+      onFilter: (value, record) => record.type === value,
+    },
+    {
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      render: (amount, record) => {
+        const symbol = record.currency === 'CNY' ? '¥' : '$';
+        return (
+          <span style={{ 
+            color: record.type === '入金' ? '#3f8600' : '#cf1322',
+            fontWeight: 'bold'
+          }}>
+            {record.type === '入金' ? '+' : '-'}{symbol}{amount.toLocaleString()}
+          </span>
+        );
+      },
+      sorter: (a, b) => a.amount - b.amount,
+    },
+    {
+      title: '币种',
+      dataIndex: 'currency',
+      key: 'currency',
+      render: (currency) => (
+        <Tag color={currency === 'CNY' ? 'blue' : 'purple'}>{currency}</Tag>
+      ),
+      filters: [
+        { text: 'CNY', value: 'CNY' },
+        { text: 'USD', value: 'USD' },
+      ],
+      onFilter: (value, record) => record.currency === value,
+    },
+  ];
+
   // 获取当前页面标题
   const getPageTitle = () => {
     const titles = {
@@ -247,10 +357,17 @@ function App() {
 
   // 渲染出入金记录页面
   const renderInvestmentRecords = () => (
-    <Card title="出入金记录">
+    <Card 
+      title="出入金记录"
+      extra={
+        <Button type="primary" onClick={() => message.info('新增记录功能开发中...')}>
+          新增记录
+        </Button>
+      }
+    >
       <Table 
-        columns={columns} 
-        dataSource={investmentData} 
+        columns={cashFlowColumns} 
+        dataSource={cashFlowData} 
         pagination={{ pageSize: 10 }}
       />
     </Card>
