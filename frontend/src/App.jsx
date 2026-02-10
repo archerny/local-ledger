@@ -49,7 +49,7 @@ function App() {
     {
       key: '2',
       icon: <DollarOutlined />,
-      label: '投资记录',
+      label: '出入金记录',
     },
     {
       key: '3',
@@ -202,14 +202,151 @@ function App() {
     },
   ];
 
+  // 获取当前页面标题
+  const getPageTitle = () => {
+    const titles = {
+      '1': '仪表盘',
+      '2': '出入金记录',
+      '3': '盈亏分析',
+      '4': '系统设置',
+    };
+    return titles[selectedMenu] || '仪表盘';
+  };
+
+  // 渲染仪表盘页面
+  const renderDashboard = () => (
+    <>
+      {/* 统计卡片 */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        {statistics.map((stat, index) => (
+          <Col span={6} key={index}>
+            <Card>
+              <Statistic
+                title={stat.title}
+                value={stat.value}
+                precision={stat.precision || 0}
+                valueStyle={stat.valueStyle}
+                prefix={stat.prefix}
+                suffix={stat.suffix}
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* 投资记录表格 */}
+      <Card title="最近投资记录">
+        <Table 
+          columns={columns} 
+          dataSource={investmentData} 
+          pagination={{ pageSize: 5 }}
+        />
+      </Card>
+    </>
+  );
+
+  // 渲染出入金记录页面
+  const renderInvestmentRecords = () => (
+    <Card title="出入金记录">
+      <Table 
+        columns={columns} 
+        dataSource={investmentData} 
+        pagination={{ pageSize: 10 }}
+      />
+    </Card>
+  );
+
+  // 渲染盈亏分析页面
+  const renderProfitAnalysis = () => (
+    <>
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="总盈亏"
+              value={25000}
+              prefix="¥"
+              suffix={<RiseOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+            />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="总收益率"
+              value={25}
+              suffix="%"
+              precision={2}
+              valueStyle={{ color: '#3f8600' }}
+            />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="盈利项目数"
+              value={2}
+              suffix="个"
+              valueStyle={{ color: '#3f8600' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+      <Card title="盈亏详细分析">
+        <p style={{ fontSize: 16, color: '#666' }}>
+          盈亏分析图表和详细数据将在此处显示...
+        </p>
+      </Card>
+    </>
+  );
+
+  // 渲染系统设置页面
+  const renderSettings = () => (
+    <Card title="系统设置">
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div>
+          <h3>数据库配置</h3>
+          <p style={{ color: '#666' }}>配置数据库连接信息</p>
+        </div>
+        <div>
+          <h3>通知设置</h3>
+          <p style={{ color: '#666' }}>配置价格提醒和通知方式</p>
+        </div>
+        <div>
+          <h3>数据导入导出</h3>
+          <p style={{ color: '#666' }}>导入或导出投资数据</p>
+        </div>
+        <div>
+          <h3>关于</h3>
+          <p style={{ color: '#666' }}>版本信息和系统说明</p>
+        </div>
+      </Space>
+    </Card>
+  );
+
+  // 根据选中的菜单渲染对应的页面内容
+  const renderContent = () => {
+    switch (selectedMenu) {
+      case '1':
+        return renderDashboard();
+      case '2':
+        return renderInvestmentRecords();
+      case '3':
+        return renderProfitAnalysis();
+      case '4':
+        return renderSettings();
+      default:
+        return renderDashboard();
+    }
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
         breakpoint="lg"
         collapsedWidth="0"
-        style={{
-          background: colorBgContainer,
-        }}
+        theme="dark"
       >
         <div style={{ 
           height: 64, 
@@ -219,11 +356,12 @@ function App() {
           justifyContent: 'center',
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1890ff'
+          color: '#fff'
         }}>
           投资盈亏管理
         </div>
         <Menu
+          theme="dark"
           mode="inline"
           selectedKeys={[selectedMenu]}
           items={menuItems}
@@ -240,7 +378,7 @@ function App() {
             justifyContent: 'space-between',
           }}
         >
-          <h2 style={{ margin: 0 }}>仪表盘</h2>
+          <h2 style={{ margin: 0 }}>{getPageTitle()}</h2>
           <Space>
             <Tag color={backendStatus === '已连接' ? 'success' : 'error'}>
               后端状态: {backendStatus}
@@ -257,40 +395,7 @@ function App() {
               borderRadius: borderRadiusLG,
             }}
           >
-            {/* 统计卡片 */}
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-              {statistics.map((stat, index) => (
-                <Col span={6} key={index}>
-                  <Card>
-                    <Statistic
-                      title={stat.title}
-                      value={stat.value}
-                      precision={stat.precision || 0}
-                      valueStyle={stat.valueStyle}
-                      prefix={stat.prefix}
-                      suffix={stat.suffix}
-                    />
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            {/* 投资记录表格 */}
-            <Card 
-              title="投资记录" 
-              extra={
-                <Space>
-                  <Button type="primary">添加投资</Button>
-                  <Button>导出数据</Button>
-                </Space>
-              }
-            >
-              <Table 
-                columns={columns} 
-                dataSource={investmentData} 
-                pagination={{ pageSize: 10 }}
-              />
-            </Card>
+            {renderContent()}
           </div>
         </Content>
       </Layout>
