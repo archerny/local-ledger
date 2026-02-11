@@ -4,6 +4,7 @@ import axios from 'axios';
 import { menuItems } from '../constants/menuConfig';
 import Dashboard from '../pages/Dashboard';
 import CashFlow from '../pages/CashFlow';
+import TradeRecords from '../pages/TradeRecords';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
 import './AppLayout.css';
@@ -44,8 +45,10 @@ const AppLayout = () => {
       case '2':
         return <CashFlow />;
       case '3':
-        return <ProfitAnalysis />;
+        return <TradeRecords />;
       case '4':
+        return <ProfitAnalysis />;
+      case '5':
         return <Settings />;
       default:
         return <Dashboard />;
