@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, theme, Space, Button, Tag, message } from 'antd';
 import axios from 'axios';
-import { menuItems, pageTitles } from '../constants/menuConfig';
+import { menuItems } from '../constants/menuConfig';
 import Dashboard from '../pages/Dashboard';
 import CashFlow from '../pages/CashFlow';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
@@ -34,11 +34,6 @@ const AppLayout = () => {
       setBackendStatus('连接失败');
       console.error('后端连接失败:', error);
     }
-  };
-
-  // 获取当前页面标题
-  const getPageTitle = () => {
-    return pageTitles[selectedMenu] || '仪表盘';
   };
 
   // 根据选中的菜单渲染对应的页面内容
@@ -94,7 +89,7 @@ const AppLayout = () => {
             background: colorBgContainer,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
             borderBottom: '1px solid #f0f0f0',
             position: 'sticky',
@@ -102,7 +97,6 @@ const AppLayout = () => {
             zIndex: 10,
           }}
         >
-          <h2 style={{ margin: 0 }}>{getPageTitle()}</h2>
           <Space>
             <Tag color={backendStatus === '已连接' ? 'success' : 'error'}>
               后端状态: {backendStatus}

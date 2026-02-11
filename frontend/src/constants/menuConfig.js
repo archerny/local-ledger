@@ -29,11 +29,3 @@ export const menuItems = [
     label: '系统设置',
   },
 ];
-
-// 页面标题映射
-export const pageTitles = {
-  '1': '仪表盘',
-  '2': '出入金记录',
-  '3': '盈亏分析',
-  '4': '系统设置',
-};
