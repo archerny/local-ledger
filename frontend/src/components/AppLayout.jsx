@@ -66,15 +66,17 @@ const AppLayout = () => {
       >
         <div style={{ 
           height: 64, 
-          margin: 16, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          fontSize: 18,
+          fontSize: 20,
           fontWeight: 'bold',
-          color: '#fff'
+          color: '#fff',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          letterSpacing: '2px',
+          padding: '0 16px'
         }}>
-          投资盈亏管理
+          投资分析平台
         </div>
         <Menu
           theme="dark"
@@ -82,6 +84,7 @@ const AppLayout = () => {
           selectedKeys={[selectedMenu]}
           items={menuItems}
           onClick={({ key }) => setSelectedMenu(key)}
+          style={{ marginTop: 8 }}
         />
       </Sider>
       <Layout>
@@ -92,6 +95,11 @@ const AppLayout = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            borderBottom: '1px solid #f0f0f0',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
           }}
         >
           <h2 style={{ margin: 0 }}>{getPageTitle()}</h2>
@@ -102,7 +110,7 @@ const AppLayout = () => {
             <Button onClick={checkBackendHealth}>刷新连接</Button>
           </Space>
         </Header>
-        <Content style={{ margin: '24px 16px 0' }}>
+        <Content style={{ margin: '32px 24px 24px', background: '#f5f5f5' }}>
           <div
             style={{
               padding: 24,
