@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Table, Tag, Button, message } from 'antd';
+import React, { useState } from 'react';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col } from 'antd';
 
 // 交易记录示例数据
 const tradeRecordsData = [
@@ -183,8 +183,29 @@ const tradeColumns = [
 ];
 
 const TradeRecords = () => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
   const handleAddRecord = () => {
-    message.info('新增交易记录功能开发中...');
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      console.log('提交的交易记录数据:', values);
+      message.success('交易记录添加成功！');
+      setIsModalVisible(false);
+      form.resetFields();
+      // TODO: 这里可以调用API将数据保存到后端
+    } catch (error) {
+      console.error('表单验证失败:', error);
+    }
   };
 
   return (
@@ -202,6 +223,136 @@ const TradeRecords = () => {
         pagination={{ pageSize: 10 }}
         scroll={{ x: 1200 }}
       />
+
+      <Modal
+        title="新增交易记录"
+        open={isModalVisible}
+        onCancel={handleCancel}
+        footer={[
+          <Button key="cancel" onClick={handleCancel}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmit}>
+            提交
+          </Button>,
+        ]}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            currency: 'CNY',
+            type: '买入',
+          }}
+        >
+          <Form.Item
+            label="日期"
+            name="date"
+            rules={[{ required: true, message: '请选择交易日期' }]}
+          >
+            <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
+          </Form.Item>
+
+          <Form.Item
+            label="券商"
+            name="broker"
+            rules={[{ required: true, message: '请输入券商名称' }]}
+          >
+            <Input placeholder="例如：华泰证券" />
+          </Form.Item>
+
+          <Form.Item
+            label="股票代码"
+            name="symbol"
+            rules={[{ required: true, message: '请输入股票代码' }]}
+          >
+            <Input placeholder="例如：AAPL 或 600519" />
+          </Form.Item>
+
+          <Form.Item
+            label="股票名称"
+            name="name"
+            rules={[{ required: true, message: '请输入股票名称' }]}
+          >
+            <Input placeholder="例如：苹果公司" />
+          </Form.Item>
+
+          <Form.Item
+            label="交易类型"
+            name="type"
+            rules={[{ required: true, message: '请选择交易类型' }]}
+          >
+            <Select>
+              <Select.Option value="买入">买入</Select.Option>
+              <Select.Option value="卖出">卖出</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="数量"
+            name="quantity"
+            rules={[
+              { required: true, message: '请输入交易数量' },
+              { type: 'number', min: 1, message: '数量必须大于0' },
+            ]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="请输入数量"
+              min={1}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="成交价格"
+            name="price"
+            rules={[
+              { required: true, message: '请输入成交价格' },
+              { type: 'number', min: 0.01, message: '价格必须大于0' },
+            ]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="请输入价格"
+              min={0.01}
+              precision={2}
+            />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="交易费用"
+                name="fee"
+                rules={[
+                  { required: true, message: '请输入交易费用' },
+                  { type: 'number', min: 0, message: '费用不能为负数' },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="请输入费用"
+                  min={0}
+                  precision={2}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="币种"
+                name="currency"
+                rules={[{ required: true, message: '请选择币种' }]}
+              >
+                <Select>
+                  <Select.Option value="CNY">CNY</Select.Option>
+                  <Select.Option value="USD">USD</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </Card>
   );
 };
