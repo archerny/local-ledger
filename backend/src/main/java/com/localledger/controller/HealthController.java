@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 简单的测试控制器
+ * 健康检查控制器
  */
 @RestController
 @RequestMapping("/api")
-public class HelloController {
+public class HealthController {
 
     /**
      * 健康检查接口
@@ -22,16 +22,6 @@ public class HelloController {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
         response.put("message", "服务运行正常");
-        return response;
-    }
-
-    /**
-     * 欢迎接口
-     */
-    @GetMapping("/hello")
-    public Map<String, String> hello() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "欢迎使用本地账本系统！");
         return response;
     }
 }
