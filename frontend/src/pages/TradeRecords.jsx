@@ -73,6 +73,13 @@ const tradeRecordsData = [
 // 交易记录表格列定义
 const tradeColumns = [
   {
+    title: '交易ID',
+    dataIndex: 'key',
+    key: 'id',
+    width: 80,
+    fixed: 'left',
+  },
+  {
     title: '日期',
     dataIndex: 'date',
     key: 'date',
