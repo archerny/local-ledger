@@ -87,7 +87,7 @@ java -jar target/backend-1.0.0.jar --spring.profiles.active=local
 curl http://localhost:8080/api/health
 
 # 访问数据库测试接口
-curl http://localhost:8080/api/test/db
+curl http://localhost:8080/api/db-test
 ```
 
 如果返回正常，说明配置成功！
