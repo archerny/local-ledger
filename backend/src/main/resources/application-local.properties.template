@@ -1,0 +1,17 @@
+# ========================================
+# 本地开发环境配置文件模板
+# 使用说明：
+# 1. 复制此文件为 application-local.properties
+# 2. 修改其中的配置为你的实际值
+# 3. application-local.properties 不会被提交到代码仓库
+# ========================================
+
+# 数据库配置 - 本地环境
+spring.datasource.url=jdbc:postgresql://localhost:5432/ledgerdb
+spring.datasource.username=ledger
+spring.datasource.password=your_actual_password_here
+
+# 可以在这里覆盖其他需要本地化的配置
+# 例如：
+# server.port=8081
+# logging.level.com.localledger=TRACE
