@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout, Menu, theme, Space, Button, Tag, message } from 'antd';
 import axios from 'axios';
-import { menuItems } from '../constants/menuConfig';
+import { menuItems, menuKeyToPath, pathToMenuKey, menuKeyToParent } from '../constants/menuConfig';
 import Dashboard from '../pages/Dashboard';
 import CashFlow from '../pages/CashFlow';
 import BrokerManagement from '../pages/BrokerManagement';
@@ -17,12 +17,27 @@ const AppLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const [selectedMenu, setSelectedMenu] = useState('1');
-  const [openKeys, setOpenKeys] = useState([]);
-  const [backendStatus, setBackendStatus] = useState('未连接');
+  // 从 URL hash 中恢复菜单选中状态
+  const getMenuKeyFromHash = () => {
+    const hash = window.location.hash.replace('#/', '').replace('#', '');
+    return pathToMenuKey[hash] || '1';
+  };
 
-  // 检查后端连接状态
+  const getOpenKeysFromMenuKey = (key) => {
+    const parent = menuKeyToParent[key];
+    return parent ? [parent] : [];
+  };
+
+  const initialMenuKey = getMenuKeyFromHash();
+  const [selectedMenu, setSelectedMenu] = useState(initialMenuKey);
+  const [openKeys, setOpenKeys] = useState(getOpenKeysFromMenuKey(initialMenuKey));
+  const [backendStatus, setBackendStatus] = useState('未连接');
+  const hasCheckedHealth = useRef(false);
+
+  // 检查后端连接状态（仅首次挂载时执行一次）
   useEffect(() => {
+    if (hasCheckedHealth.current) return;
+    hasCheckedHealth.current = true;
     checkBackendHealth();
   }, []);
 
@@ -38,6 +53,33 @@ const AppLayout = () => {
       console.error('后端连接失败:', error);
     }
   };
+
+  // 菜单切换时同步更新 URL hash
+  const handleMenuClick = ({ key }) => {
+    setSelectedMenu(key);
+    const path = menuKeyToPath[key];
+    if (path) {
+      window.location.hash = `#/${path}`;
+    }
+  };
+
+  // 监听浏览器前进/后退按钮
+  useEffect(() => {
+    const handleHashChange = () => {
+      const key = getMenuKeyFromHash();
+      setSelectedMenu(key);
+      setOpenKeys(getOpenKeysFromMenuKey(key));
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // 初始化时如果没有 hash，设置默认的 hash
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.hash = `#/${menuKeyToPath['1']}`;
+    }
+  }, []);
 
   // 根据选中的菜单渲染对应的页面内容
   const renderContent = () => {
@@ -87,7 +129,7 @@ const AppLayout = () => {
           openKeys={openKeys}
           onOpenChange={(keys) => setOpenKeys(keys)}
           items={menuItems}
-          onClick={({ key }) => setSelectedMenu(key)}
+          onClick={handleMenuClick}
           style={{ marginTop: 8 }}
         />
       </Sider>

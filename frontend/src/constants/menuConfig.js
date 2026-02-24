@@ -9,6 +9,27 @@ import {
   SwapOutlined,
 } from '@ant-design/icons';
 
+// 菜单 key 与 URL hash 路径的映射
+export const menuKeyToPath = {
+  '1': 'dashboard',
+  '2': 'cashflow',
+  '6': 'broker',
+  '3': 'trades',
+  '4': 'profit',
+  '5': 'settings',
+};
+
+// 反向映射：path -> key
+export const pathToMenuKey = Object.fromEntries(
+  Object.entries(menuKeyToPath).map(([k, v]) => [v, k])
+);
+
+// 根据菜单 key 找到其所属的父级菜单 key（用于展开子菜单）
+export const menuKeyToParent = {
+  '2': 'account',
+  '6': 'account',
+};
+
 // 菜单项配置
 export const menuItems = [
   {
