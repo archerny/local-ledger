@@ -3,6 +3,7 @@ import {
   DashboardOutlined,
   DollarOutlined,
   BankOutlined,
+  WalletOutlined,
   LineChartOutlined,
   SettingOutlined,
   SwapOutlined,
@@ -16,14 +17,21 @@ export const menuItems = [
     label: '仪表盘',
   },
   {
-    key: '2',
-    icon: React.createElement(DollarOutlined),
-    label: '出入金记录',
-  },
-  {
-    key: '6',
-    icon: React.createElement(BankOutlined),
-    label: '券商管理',
+    key: 'account',
+    icon: React.createElement(WalletOutlined),
+    label: '账户管理',
+    children: [
+      {
+        key: '2',
+        icon: React.createElement(DollarOutlined),
+        label: '出入金记录',
+      },
+      {
+        key: '6',
+        icon: React.createElement(BankOutlined),
+        label: '券商管理',
+      },
+    ],
   },
   {
     key: '3',

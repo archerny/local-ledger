@@ -18,6 +18,7 @@ const AppLayout = () => {
   } = theme.useToken();
 
   const [selectedMenu, setSelectedMenu] = useState('1');
+  const [openKeys, setOpenKeys] = useState([]);
   const [backendStatus, setBackendStatus] = useState('未连接');
 
   // 检查后端连接状态
@@ -83,6 +84,8 @@ const AppLayout = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedMenu]}
+          openKeys={openKeys}
+          onOpenChange={(keys) => setOpenKeys(keys)}
           items={menuItems}
           onClick={({ key }) => setSelectedMenu(key)}
           style={{ marginTop: 8 }}
