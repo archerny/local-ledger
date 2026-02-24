@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, Tooltip } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, Tooltip, Spin } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import { fetchAllBrokers, createBroker } from '../services/brokerApi';
 
 // 国家/地区选项
 const countryOptions = [
@@ -26,75 +27,40 @@ const countryMap = {
   AU: { label: '澳大利亚', color: 'gold' },
 };
 
-// 初始 Mock 数据（与数据库初始数据对应）
-const initialBrokerData = [
-  {
-    key: '1',
-    id: 1,
-    brokerName: '富途证券',
-    country: 'HK',
-    description: '港美股互联网券商',
-    email: '',
-    phone: '',
-    isActive: false,
-    createdAt: '2024-01-15 10:00:00',
-    updatedAt: '2024-01-15 10:00:00',
-  },
-  {
-    key: '2',
-    id: 2,
-    brokerName: '老虎证券',
-    country: 'NZ',
-    description: '港美股互联网券商',
-    email: '',
-    phone: '',
-    isActive: true,
-    createdAt: '2024-01-15 10:00:00',
-    updatedAt: '2024-01-15 10:00:00',
-  },
-  {
-    key: '3',
-    id: 3,
-    brokerName: '盈透证券',
-    country: 'US',
-    description: '美国本土综合券商',
-    email: '',
-    phone: '',
-    isActive: true,
-    createdAt: '2024-01-15 10:00:00',
-    updatedAt: '2024-01-15 10:00:00',
-  },
-  {
-    key: '4',
-    id: 4,
-    brokerName: '嘉信证券',
-    country: 'US',
-    description: '美国本土综合券商',
-    email: '',
-    phone: '',
-    isActive: true,
-    createdAt: '2024-01-15 10:00:00',
-    updatedAt: '2024-01-15 10:00:00',
-  },
-  {
-    key: '5',
-    id: 5,
-    brokerName: '第一证券',
-    country: 'US',
-    description: '美国本土华人券商',
-    email: '',
-    phone: '',
-    isActive: false,
-    createdAt: '2024-01-15 10:00:00',
-    updatedAt: '2024-01-15 10:00:00',
-  },
-];
-
 const BrokerManagement = () => {
-  const [brokerData, setBrokerData] = useState(initialBrokerData);
+  const [brokerData, setBrokerData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBroker, setEditingBroker] = useState(null); // null 表示新增，否则为编辑
+  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+
+  // 加载券商数据
+  const loadBrokers = async () => {
+    setLoading(true);
+    try {
+      const result = await fetchAllBrokers();
+      if (result.status === 'SUCCESS') {
+        const list = (result.data || []).map((item) => ({
+          ...item,
+          key: String(item.id),
+        }));
+        setBrokerData(list);
+      } else {
+        message.error(result.message || '查询券商数据失败');
+      }
+    } catch (error) {
+      console.error('查询券商数据失败:', error);
+      message.error('查询券商数据失败，请检查后端服务是否启动');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 组件加载时获取数据
+  useEffect(() => {
+    loadBrokers();
+  }, []);
 
   // 表格列定义
   const columns = [
@@ -179,34 +145,32 @@ const BrokerManagement = () => {
   // 提交表单
   const handleSubmit = () => {
     form.validateFields()
-      .then((values) => {
-        if (editingBroker) {
-          // 编辑模式
-          const updatedData = brokerData.map((item) =>
-            item.key === editingBroker.key
-              ? { ...item, ...values, updatedAt: new Date().toLocaleString() }
-              : item
-          );
-          setBrokerData(updatedData);
-          message.success(`券商「${values.brokerName}」修改成功！`);
-        } else {
-          // 新增模式
-          const newId = Math.max(...brokerData.map((item) => item.id)) + 1;
-          const newBroker = {
-            key: String(newId),
-            id: newId,
-            ...values,
-            isActive: true,
-            createdAt: new Date().toLocaleString(),
-            updatedAt: new Date().toLocaleString(),
-          };
-          setBrokerData([...brokerData, newBroker]);
-          message.success(`券商「${values.brokerName}」添加成功！`);
+      .then(async (values) => {
+        setSubmitting(true);
+        try {
+          if (editingBroker) {
+            // 编辑模式 - 暂不实现，表格无操作列
+            message.info('编辑功能暂未开放');
+          } else {
+            // 新增模式 - 调用后端 API
+            const result = await createBroker(values);
+            if (result.status === 'SUCCESS') {
+              message.success(`券商「${values.brokerName}」添加成功！`);
+              loadBrokers(); // 重新加载数据
+            } else {
+              message.error(result.message || '新增券商失败');
+            }
+          }
+          setIsModalOpen(false);
+          setEditingBroker(null);
+          form.resetFields();
+        } catch (error) {
+          console.error('操作失败:', error);
+          const errorMsg = error.response?.data?.message || '操作失败，请稍后重试';
+          message.error(errorMsg);
+        } finally {
+          setSubmitting(false);
         }
-        setIsModalOpen(false);
-        setEditingBroker(null);
-        form.resetFields();
-        // TODO: 后续需要调用API保存数据
       })
       .catch((errorInfo) => {
         console.log('表单验证失败:', errorInfo);
@@ -225,6 +189,8 @@ const BrokerManagement = () => {
       <Table
         columns={columns}
         dataSource={brokerData}
+        loading={loading}
+        rowKey="id"
         pagination={{ pageSize: 10 }}
         rowClassName={(record) => (!record.isActive ? 'inactive-row' : '')}
       />
@@ -237,7 +203,7 @@ const BrokerManagement = () => {
           <Button key="cancel" onClick={handleCancel}>
             取消
           </Button>,
-          <Button key="submit" type="primary" onClick={handleSubmit}>
+          <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>
             {editingBroker ? '保存' : '提交'}
           </Button>,
         ]}
