@@ -57,12 +57,6 @@ const BrokerManagement = () => {
   // 表格列定义
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 60,
-    },
-    {
       title: '券商名称',
       dataIndex: 'brokerName',
       key: 'brokerName',
