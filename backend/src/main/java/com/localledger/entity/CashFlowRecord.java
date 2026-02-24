@@ -59,6 +59,12 @@ public class CashFlowRecord extends BaseEntity {
     private Currency currency = Currency.CNY;
 
     /**
+     * 出入金关联的银行
+     */
+    @Column(name = "bank", length = 100)
+    private String bank;
+
+    /**
      * 备注说明
      */
     @Column(name = "description", length = 500)
@@ -131,6 +137,14 @@ public class CashFlowRecord extends BaseEntity {
         this.currency = currency;
     }
 
+    public String getBank() {
+        return bank;
+    }
+
+    public void setBank(String bank) {
+        this.bank = bank;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -164,6 +178,7 @@ public class CashFlowRecord extends BaseEntity {
                 ", recordType=" + recordType +
                 ", amount=" + amount +
                 ", currency=" + currency +
+                ", bank='" + bank + '\'' +
                 ", description='" + description + '\'' +
                 ", createdBy='" + createdBy + '\'' +
                 ", isDeleted=" + isDeleted +

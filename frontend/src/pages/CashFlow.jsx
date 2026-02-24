@@ -132,6 +132,12 @@ const CashFlow = () => {
       onFilter: (value, record) => record.currency === value,
     },
     {
+      title: '银行',
+      dataIndex: 'bank',
+      key: 'bank',
+      render: (text) => <span>{text || '-'}</span>,
+    },
+    {
       title: '备注',
       dataIndex: 'description',
       key: 'description',
@@ -161,6 +167,7 @@ const CashFlow = () => {
             recordType: values.recordType,
             amount: values.amount,
             currency: values.currency,
+            bank: values.bank || '',
             description: values.description || '',
           };
 
@@ -284,6 +291,13 @@ const CashFlow = () => {
               <Select.Option value="HKD">HKD - 港币</Select.Option>
               <Select.Option value="USD">USD - 美元</Select.Option>
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="银行"
+            name="bank"
+          >
+            <Input placeholder="请输入关联银行名称（选填）" maxLength={100} />
           </Form.Item>
 
           <Form.Item
