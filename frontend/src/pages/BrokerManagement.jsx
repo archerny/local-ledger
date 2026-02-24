@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, Tooltip, Spin } from 'antd';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, Tooltip, Spin, Row, Col, Switch } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { fetchAllBrokers, createBroker } from '../services/brokerApi';
+import { fetchAllBrokers, createBroker, updateBroker } from '../services/brokerApi';
 
 // 国家/地区选项
 const countryOptions = [
   { label: '🇨🇳 中国大陆', value: 'CN' },
   { label: '🇭🇰 中国香港', value: 'HK' },
   { label: '🇺🇸 美国', value: 'US' },
-  { label: '🇸🇬 新加坡', value: 'SG' },
-  { label: '🇬🇧 英国', value: 'UK' },
-  { label: '🇯🇵 日本', value: 'JP' },
   { label: '🇳🇿 新西兰', value: 'NZ' },
-  { label: '🇦🇺 澳大利亚', value: 'AU' },
 ];
 
 // 国家代码映射（用于展示）
@@ -20,11 +16,7 @@ const countryMap = {
   CN: { label: '中国大陆', color: 'red' },
   HK: { label: '中国香港', color: 'magenta' },
   US: { label: '美国', color: 'blue' },
-  SG: { label: '新加坡', color: 'green' },
-  UK: { label: '英国', color: 'purple' },
-  JP: { label: '日本', color: 'orange' },
   NZ: { label: '新西兰', color: 'cyan' },
-  AU: { label: '澳大利亚', color: 'gold' },
 };
 
 const BrokerManagement = () => {
@@ -126,7 +118,29 @@ const BrokerManagement = () => {
       ],
       onFilter: (value, record) => record.isActive === value,
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 80,
+      render: (_, record) => (
+        <a onClick={() => handleEdit(record)}>更新</a>
+      ),
+    },
   ];
+
+  // 打开编辑弹窗
+  const handleEdit = (record) => {
+    setEditingBroker(record);
+    form.setFieldsValue({
+      brokerName: record.brokerName,
+      isActive: record.isActive,
+      country: record.country,
+      description: record.description,
+      email: record.email,
+      phone: record.phone,
+    });
+    setIsModalOpen(true);
+  };
 
   // 打开新增弹窗
   const handleAdd = () => {
@@ -149,8 +163,14 @@ const BrokerManagement = () => {
         setSubmitting(true);
         try {
           if (editingBroker) {
-            // 编辑模式 - 暂不实现，表格无操作列
-            message.info('编辑功能暂未开放');
+            // 编辑模式 - 调用后端更新 API
+            const result = await updateBroker(editingBroker.id, values);
+            if (result.status === 'SUCCESS') {
+              message.success(`券商「${values.brokerName}」更新成功！`);
+              loadBrokers();
+            } else {
+              message.error(result.message || '更新券商失败');
+            }
           } else {
             // 新增模式 - 调用后端 API
             const result = await createBroker(values);
@@ -215,16 +235,30 @@ const BrokerManagement = () => {
           layout="vertical"
           style={{ marginTop: 20 }}
         >
-          <Form.Item
-            label="券商名称"
-            name="brokerName"
-            rules={[
-              { required: true, message: '请输入券商名称' },
-              { max: 100, message: '券商名称不能超过100个字符' },
-            ]}
-          >
-            <Input placeholder="请输入券商名称，如：富途证券" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col flex="auto">
+              <Form.Item
+                label="券商名称"
+                name="brokerName"
+                rules={[
+                  { required: true, message: '请输入券商名称' },
+                  { max: 100, message: '券商名称不能超过100个字符' },
+                ]}
+              >
+                <Input placeholder="请输入券商名称，如：富途证券" />
+              </Form.Item>
+            </Col>
+            <Col flex="100px">
+              <Form.Item
+                label="状态"
+                name="isActive"
+                valuePropName="checked"
+                initialValue={true}
+              >
+                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             label="国家/地区"
