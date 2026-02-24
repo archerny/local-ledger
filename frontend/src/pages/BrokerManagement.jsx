@@ -1,0 +1,313 @@
+import React, { useState } from 'react';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, Tooltip } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+
+// 国家/地区选项
+const countryOptions = [
+  { label: '🇨🇳 中国大陆', value: 'CN' },
+  { label: '🇭🇰 中国香港', value: 'HK' },
+  { label: '🇺🇸 美国', value: 'US' },
+  { label: '🇸🇬 新加坡', value: 'SG' },
+  { label: '🇬🇧 英国', value: 'UK' },
+  { label: '🇯🇵 日本', value: 'JP' },
+  { label: '🇳🇿 新西兰', value: 'NZ' },
+  { label: '🇦🇺 澳大利亚', value: 'AU' },
+];
+
+// 国家代码映射（用于展示）
+const countryMap = {
+  CN: { label: '中国大陆', color: 'red' },
+  HK: { label: '中国香港', color: 'magenta' },
+  US: { label: '美国', color: 'blue' },
+  SG: { label: '新加坡', color: 'green' },
+  UK: { label: '英国', color: 'purple' },
+  JP: { label: '日本', color: 'orange' },
+  NZ: { label: '新西兰', color: 'cyan' },
+  AU: { label: '澳大利亚', color: 'gold' },
+};
+
+// 初始 Mock 数据（与数据库初始数据对应）
+const initialBrokerData = [
+  {
+    key: '1',
+    id: 1,
+    brokerName: '富途证券',
+    country: 'HK',
+    description: '港美股互联网券商',
+    email: '',
+    phone: '',
+    isActive: false,
+    createdAt: '2024-01-15 10:00:00',
+    updatedAt: '2024-01-15 10:00:00',
+  },
+  {
+    key: '2',
+    id: 2,
+    brokerName: '老虎证券',
+    country: 'NZ',
+    description: '港美股互联网券商',
+    email: '',
+    phone: '',
+    isActive: true,
+    createdAt: '2024-01-15 10:00:00',
+    updatedAt: '2024-01-15 10:00:00',
+  },
+  {
+    key: '3',
+    id: 3,
+    brokerName: '盈透证券',
+    country: 'US',
+    description: '美国本土综合券商',
+    email: '',
+    phone: '',
+    isActive: true,
+    createdAt: '2024-01-15 10:00:00',
+    updatedAt: '2024-01-15 10:00:00',
+  },
+  {
+    key: '4',
+    id: 4,
+    brokerName: '嘉信证券',
+    country: 'US',
+    description: '美国本土综合券商',
+    email: '',
+    phone: '',
+    isActive: true,
+    createdAt: '2024-01-15 10:00:00',
+    updatedAt: '2024-01-15 10:00:00',
+  },
+  {
+    key: '5',
+    id: 5,
+    brokerName: '第一证券',
+    country: 'US',
+    description: '美国本土华人券商',
+    email: '',
+    phone: '',
+    isActive: false,
+    createdAt: '2024-01-15 10:00:00',
+    updatedAt: '2024-01-15 10:00:00',
+  },
+];
+
+const BrokerManagement = () => {
+  const [brokerData, setBrokerData] = useState(initialBrokerData);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBroker, setEditingBroker] = useState(null); // null 表示新增，否则为编辑
+  const [form] = Form.useForm();
+
+  // 表格列定义
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 60,
+    },
+    {
+      title: '券商名称',
+      dataIndex: 'brokerName',
+      key: 'brokerName',
+      render: (text) => <span style={{ fontWeight: 'bold' }}>{text}</span>,
+    },
+    {
+      title: '国家/地区',
+      dataIndex: 'country',
+      key: 'country',
+      render: (country) => {
+        const info = countryMap[country] || { label: country, color: 'default' };
+        return <Tag color={info.color}>{info.label}</Tag>;
+      },
+      filters: countryOptions.map((item) => ({ text: item.label, value: item.value })),
+      onFilter: (value, record) => record.country === value,
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+      render: (text) => (
+        <Tooltip title={text}>
+          <span style={{ color: '#666' }}>{text || '-'}</span>
+        </Tooltip>
+      ),
+    },
+    {
+      title: '关联邮箱',
+      dataIndex: 'email',
+      key: 'email',
+      render: (text) => <span style={{ color: '#666' }}>{text || '-'}</span>,
+    },
+    {
+      title: '关联电话',
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (text) => <span style={{ color: '#666' }}>{text || '-'}</span>,
+    },
+    {
+      title: '状态',
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 100,
+      render: (isActive) => (
+        <Tag color={isActive ? 'green' : 'default'}>
+          {isActive ? '启用' : '禁用'}
+        </Tag>
+      ),
+      filters: [
+        { text: '启用', value: true },
+        { text: '禁用', value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
+    },
+  ];
+
+  // 打开新增弹窗
+  const handleAdd = () => {
+    setEditingBroker(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  // 取消弹窗
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setEditingBroker(null);
+    form.resetFields();
+  };
+
+  // 提交表单
+  const handleSubmit = () => {
+    form.validateFields()
+      .then((values) => {
+        if (editingBroker) {
+          // 编辑模式
+          const updatedData = brokerData.map((item) =>
+            item.key === editingBroker.key
+              ? { ...item, ...values, updatedAt: new Date().toLocaleString() }
+              : item
+          );
+          setBrokerData(updatedData);
+          message.success(`券商「${values.brokerName}」修改成功！`);
+        } else {
+          // 新增模式
+          const newId = Math.max(...brokerData.map((item) => item.id)) + 1;
+          const newBroker = {
+            key: String(newId),
+            id: newId,
+            ...values,
+            isActive: true,
+            createdAt: new Date().toLocaleString(),
+            updatedAt: new Date().toLocaleString(),
+          };
+          setBrokerData([...brokerData, newBroker]);
+          message.success(`券商「${values.brokerName}」添加成功！`);
+        }
+        setIsModalOpen(false);
+        setEditingBroker(null);
+        form.resetFields();
+        // TODO: 后续需要调用API保存数据
+      })
+      .catch((errorInfo) => {
+        console.log('表单验证失败:', errorInfo);
+      });
+  };
+
+  return (
+    <Card
+      title="券商账户管理"
+      extra={
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          新增券商
+        </Button>
+      }
+    >
+      <Table
+        columns={columns}
+        dataSource={brokerData}
+        pagination={{ pageSize: 10 }}
+        rowClassName={(record) => (!record.isActive ? 'inactive-row' : '')}
+      />
+
+      <Modal
+        title={editingBroker ? '编辑券商信息' : '新增券商'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        footer={[
+          <Button key="cancel" onClick={handleCancel}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmit}>
+            {editingBroker ? '保存' : '提交'}
+          </Button>,
+        ]}
+        width={600}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 20 }}
+        >
+          <Form.Item
+            label="券商名称"
+            name="brokerName"
+            rules={[
+              { required: true, message: '请输入券商名称' },
+              { max: 100, message: '券商名称不能超过100个字符' },
+            ]}
+          >
+            <Input placeholder="请输入券商名称，如：富途证券" />
+          </Form.Item>
+
+          <Form.Item
+            label="国家/地区"
+            name="country"
+            rules={[{ required: true, message: '请选择所属国家/地区' }]}
+          >
+            <Select
+              placeholder="请选择所属国家/地区"
+              options={countryOptions}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="描述"
+            name="description"
+            rules={[{ max: 200, message: '描述不能超过200个字符' }]}
+          >
+            <Input.TextArea
+              placeholder="请输入券商账户描述（选填）"
+              rows={3}
+              showCount
+              maxLength={200}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="关联邮箱"
+            name="email"
+            rules={[
+              { type: 'email', message: '请输入有效的邮箱地址' },
+              { max: 100, message: '邮箱不能超过100个字符' },
+            ]}
+          >
+            <Input placeholder="请输入关联邮箱（选填）" />
+          </Form.Item>
+
+          <Form.Item
+            label="关联电话"
+            name="phone"
+            rules={[{ max: 30, message: '电话号码不能超过30个字符' }]}
+          >
+            <Input placeholder="请输入关联电话（选填）" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Card>
+  );
+};
+
+export default BrokerManagement;

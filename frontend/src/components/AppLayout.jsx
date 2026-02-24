@@ -4,6 +4,7 @@ import axios from 'axios';
 import { menuItems } from '../constants/menuConfig';
 import Dashboard from '../pages/Dashboard';
 import CashFlow from '../pages/CashFlow';
+import BrokerManagement from '../pages/BrokerManagement';
 import TradeRecords from '../pages/TradeRecords';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
@@ -44,6 +45,8 @@ const AppLayout = () => {
         return <Dashboard />;
       case '2':
         return <CashFlow />;
+      case '6':
+        return <BrokerManagement />;
       case '3':
         return <TradeRecords />;
       case '4':

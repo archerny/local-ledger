@@ -2,6 +2,7 @@ import React from 'react';
 import {
   DashboardOutlined,
   DollarOutlined,
+  BankOutlined,
   LineChartOutlined,
   SettingOutlined,
   SwapOutlined,
@@ -18,6 +19,11 @@ export const menuItems = [
     key: '2',
     icon: React.createElement(DollarOutlined),
     label: '出入金记录',
+  },
+  {
+    key: '6',
+    icon: React.createElement(BankOutlined),
+    label: '券商管理',
   },
   {
     key: '3',
