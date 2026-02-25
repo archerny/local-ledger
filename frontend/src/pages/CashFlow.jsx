@@ -10,13 +10,6 @@ const recordTypeMap = {
   WITHDRAWAL: { label: '出金', color: 'orange' },
 };
 
-// 币种符号映射
-const currencySymbolMap = {
-  CNY: '¥',
-  HKD: 'HK$',
-  USD: '$',
-};
-
 // 币种颜色映射
 const currencyColorMap = {
   CNY: 'blue',
@@ -31,6 +24,7 @@ const CashFlow = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [selectedBrokerId, setSelectedBrokerId] = useState(null);
 
   // 加载出入金记录
   const loadCashFlowRecords = async () => {
@@ -104,14 +98,13 @@ const CashFlow = () => {
       dataIndex: 'amount',
       key: 'amount',
       render: (amount, record) => {
-        const symbol = currencySymbolMap[record.currency] || '';
         const isDeposit = record.recordType === 'DEPOSIT';
         return (
           <span style={{
             color: isDeposit ? '#3f8600' : '#cf1322',
             fontWeight: 'bold',
           }}>
-            {isDeposit ? '+' : '-'}{symbol}{Number(amount).toLocaleString()}
+            {isDeposit ? '+' : '-'}{Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         );
       },
@@ -193,18 +186,39 @@ const CashFlow = () => {
       });
   };
 
+  // 根据券商筛选过滤数据
+  const filteredCashFlowData = selectedBrokerId
+    ? cashFlowData.filter((item) => item.broker?.id === selectedBrokerId)
+    : cashFlowData;
+
   return (
     <Card
       title="出入金记录"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRecord}>
-          新增记录
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span>券商筛选：</span>
+          <Select
+            allowClear
+            placeholder="全部券商"
+            style={{ width: 200 }}
+            value={selectedBrokerId}
+            onChange={(value) => setSelectedBrokerId(value)}
+          >
+            {brokerList.map((broker) => (
+              <Select.Option key={broker.id} value={broker.id}>
+                {broker.brokerName}
+              </Select.Option>
+            ))}
+          </Select>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRecord}>
+            新增记录
+          </Button>
+        </div>
       }
     >
       <Table
         columns={cashFlowColumns}
-        dataSource={cashFlowData}
+        dataSource={filteredCashFlowData}
         loading={loading}
         rowKey="id"
         pagination={{ pageSize: 10 }}
