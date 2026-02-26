@@ -8,6 +8,7 @@ import BrokerManagement from '../pages/BrokerManagement';
 import TradeRecords from '../pages/TradeRecords';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
+import StrategyManagement from '../pages/StrategyManagement';
 import './AppLayout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -96,6 +97,8 @@ const AppLayout = () => {
         return <ProfitAnalysis />;
       case '5':
         return <Settings />;
+      case '7':
+        return <StrategyManagement />;
       default:
         return <Dashboard />;
     }

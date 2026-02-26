@@ -4,3 +4,4 @@ export { default as BrokerManagement } from './BrokerManagement';
 export { default as TradeRecords } from './TradeRecords';
 export { default as ProfitAnalysis } from './ProfitAnalysis';
 export { default as Settings } from './Settings';
+export { default as StrategyManagement } from './StrategyManagement';
