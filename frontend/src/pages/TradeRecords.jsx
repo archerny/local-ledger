@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col } from 'antd';
+import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
 
 // 交易记录示例数据
 const tradeRecordsData = [
@@ -188,8 +189,8 @@ const tradeRecordsData = [
   },
 ];
 
-// 交易记录表格列定义
-const tradeColumns = [
+// 交易记录表格列定义（需要 amountVisible 参数）
+const getTradeColumns = (amountVisible) => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -276,7 +277,7 @@ const tradeColumns = [
     title: '数量',
     dataIndex: 'quantity',
     key: 'quantity',
-    render: (quantity) => quantity.toLocaleString(),
+    render: (quantity) => amountVisible ? quantity.toLocaleString() : '****',
     sorter: (a, b) => a.quantity - b.quantity,
     width: 100,
   },
@@ -284,7 +285,7 @@ const tradeColumns = [
     title: '成交价格',
     dataIndex: 'price',
     key: 'price',
-    render: (price) => price.toFixed(2),
+    render: (price) => amountVisible ? price.toFixed(2) : '****',
     sorter: (a, b) => a.price - b.price,
     width: 120,
   },
@@ -293,6 +294,7 @@ const tradeColumns = [
     dataIndex: 'amount',
     key: 'amount',
     render: (amount, record) => {
+      if (!amountVisible) return <span style={{ fontWeight: 'bold', color: '#999' }}>****</span>;
       const amountColorMap = {
         '买入': '#cf1322',
         '卖出': '#3f8600',
@@ -317,7 +319,7 @@ const tradeColumns = [
     title: '交易费用',
     dataIndex: 'fee',
     key: 'fee',
-    render: (fee) => fee.toFixed(2),
+    render: (fee) => amountVisible ? fee.toFixed(2) : '****',
     sorter: (a, b) => a.fee - b.fee,
     width: 120,
   },
@@ -349,6 +351,8 @@ const TradeRecords = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [form] = Form.useForm();
+  const { amountVisible } = useAmountVisibility();
+  const tradeColumns = getTradeColumns(amountVisible);
 
   const handleAddRecord = () => {
     setIsModalVisible(true);

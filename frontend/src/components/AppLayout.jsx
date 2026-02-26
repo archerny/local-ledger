@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Menu, theme, Space, Button, Tag, message } from 'antd';
+import { Layout, Menu, theme, Space, Button, Tag, Tooltip, message } from 'antd';
+import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { menuItems, menuKeyToPath, pathToMenuKey, menuKeyToParent } from '../constants/menuConfig';
 import Dashboard from '../pages/Dashboard';
@@ -9,6 +10,7 @@ import TradeRecords from '../pages/TradeRecords';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
 import StrategyManagement from '../pages/StrategyManagement';
+import { AmountVisibilityProvider, useAmountVisibility } from '../contexts/AmountVisibilityContext';
 import './AppLayout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -152,6 +154,7 @@ const AppLayout = () => {
           }}
         >
           <Space>
+            <AmountVisibilityToggle />
             <Tag color={backendStatus === '已连接' ? 'success' : 'error'}>
               后端状态: {backendStatus}
             </Tag>
@@ -175,4 +178,33 @@ const AppLayout = () => {
   );
 };
 
-export default AppLayout;
+/**
+ * 金额可见性切换按钮（内部组件）
+ */
+const AmountVisibilityToggle = () => {
+  const { amountVisible, toggleAmountVisible } = useAmountVisibility();
+  return (
+    <Tooltip title={amountVisible ? '隐藏金额数据' : '显示金额数据'}>
+      <Button
+        type="text"
+        icon={amountVisible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+        onClick={toggleAmountVisible}
+        style={{
+          fontSize: 18,
+          color: amountVisible ? '#1890ff' : '#999',
+        }}
+      />
+    </Tooltip>
+  );
+};
+
+/**
+ * 包裹 AmountVisibilityProvider 的导出组件
+ */
+const AppLayoutWithProvider = () => (
+  <AmountVisibilityProvider>
+    <AppLayout />
+  </AmountVisibilityProvider>
+);
+
+export default AppLayoutWithProvider;

@@ -3,6 +3,7 @@ import { Card, Table, Tag, Button, message, Modal, Form, Input, Select, DatePick
 import { PlusOutlined } from '@ant-design/icons';
 import { fetchAllCashFlowRecords, createCashFlowRecord } from '../services/cashFlowApi';
 import { fetchAllBrokers } from '../services/brokerApi';
+import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
 
 // 记录类型映射
 const recordTypeMap = {
@@ -25,6 +26,7 @@ const CashFlow = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [selectedBrokerId, setSelectedBrokerId] = useState(null);
+  const { amountVisible } = useAmountVisibility();
 
   // 加载出入金记录
   const loadCashFlowRecords = async () => {
@@ -98,6 +100,7 @@ const CashFlow = () => {
       dataIndex: 'amount',
       key: 'amount',
       render: (amount, record) => {
+        if (!amountVisible) return <span style={{ fontWeight: 'bold', color: '#999' }}>****</span>;
         const isDeposit = record.recordType === 'DEPOSIT';
         return (
           <span style={{

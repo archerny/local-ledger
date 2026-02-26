@@ -3,9 +3,10 @@ import { Card, Statistic, Row, Col, Table } from 'antd';
 import { statistics, investmentData } from '../constants/mockData';
 import { RiseOutlined, FallOutlined } from '@ant-design/icons';
 import { Tag, Space, Button } from 'antd';
+import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
 
-// 投资记录表格列定义
-const columns = [
+// 投资记录表格列定义（需要 amountVisible 参数）
+const getColumns = (amountVisible) => [
   {
     title: '名称',
     dataIndex: 'name',
@@ -28,38 +29,45 @@ const columns = [
     title: '买入价',
     dataIndex: 'buyPrice',
     key: 'buyPrice',
-    render: (price) => `¥${price.toFixed(2)}`,
+    render: (price) => amountVisible ? `¥${price.toFixed(2)}` : '****',
   },
   {
     title: '当前价',
     dataIndex: 'currentPrice',
     key: 'currentPrice',
-    render: (price) => `¥${price.toFixed(2)}`,
+    render: (price) => amountVisible ? `¥${price.toFixed(2)}` : '****',
   },
   {
     title: '数量',
     dataIndex: 'quantity',
     key: 'quantity',
+    render: (quantity) => amountVisible ? quantity : '****',
   },
   {
     title: '盈亏',
     dataIndex: 'profit',
     key: 'profit',
-    render: (profit) => (
-      <span style={{ color: profit >= 0 ? '#3f8600' : '#cf1322' }}>
-        {profit >= 0 ? <RiseOutlined /> : <FallOutlined />} ¥{Math.abs(profit).toFixed(2)}
-      </span>
-    ),
+    render: (profit) => {
+      if (!amountVisible) return <span style={{ color: '#999' }}>****</span>;
+      return (
+        <span style={{ color: profit >= 0 ? '#3f8600' : '#cf1322' }}>
+          {profit >= 0 ? <RiseOutlined /> : <FallOutlined />} ¥{Math.abs(profit).toFixed(2)}
+        </span>
+      );
+    },
   },
   {
     title: '收益率',
     dataIndex: 'profitRate',
     key: 'profitRate',
-    render: (rate) => (
-      <span style={{ color: rate >= 0 ? '#3f8600' : '#cf1322' }}>
-        {rate >= 0 ? '+' : ''}{rate.toFixed(2)}%
-      </span>
-    ),
+    render: (rate) => {
+      if (!amountVisible) return <span style={{ color: '#999' }}>****</span>;
+      return (
+        <span style={{ color: rate >= 0 ? '#3f8600' : '#cf1322' }}>
+          {rate >= 0 ? '+' : ''}{rate.toFixed(2)}%
+        </span>
+      );
+    },
   },
   {
     title: '操作',
@@ -75,6 +83,9 @@ const columns = [
 ];
 
 const Dashboard = () => {
+  const { amountVisible } = useAmountVisibility();
+  const columns = getColumns(amountVisible);
+
   return (
     <>
       {/* 统计卡片 */}
@@ -84,11 +95,11 @@ const Dashboard = () => {
             <Card>
               <Statistic
                 title={stat.title}
-                value={stat.value}
-                precision={stat.precision || 0}
-                valueStyle={stat.valueStyle}
-                prefix={stat.prefix}
-                suffix={stat.suffix}
+                value={amountVisible ? stat.value : '****'}
+                precision={amountVisible ? (stat.precision || 0) : undefined}
+                valueStyle={amountVisible ? stat.valueStyle : { color: '#999' }}
+                prefix={amountVisible ? stat.prefix : undefined}
+                suffix={amountVisible ? stat.suffix : undefined}
               />
             </Card>
           </Col>
