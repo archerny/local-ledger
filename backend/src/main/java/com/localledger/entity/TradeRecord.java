@@ -52,7 +52,7 @@ public class TradeRecord extends BaseEntity {
     private String symbol;
 
     /**
-     * 证券名称，如 苹果公司、贵州茅台、特斯拉看涨期权
+     * 底层证券名称，如 苹果公司、贵州茅台、特斯拉
      */
     @Column(name = "name", length = 200)
     private String name;

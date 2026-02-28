@@ -66,10 +66,12 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) =>
     dataIndex: 'name',
     key: 'name',
     render: (name, record) => {
-      // 期权显示底层资产代号，股票/ETF显示自身代号
-      return record.underlyingSymbol || record.symbol;
+      const code = record.underlyingSymbol || record.symbol;
+      const displayName = name ? `${code}(${name})` : code;
+      return <span title={displayName} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{displayName}</span>;
     },
-    width: 90,
+    width: 140,
+    ellipsis: true,
   },
   {
     title: '方向',
@@ -159,9 +161,9 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) =>
   {
     title: '操作',
     key: 'action',
-    width: 80,
+    width: 60,
     render: (_, record) => (
-<a onClick={() => onViewDetail(record)}>查看详情</a>
+      <a onClick={() => onViewDetail(record)}>详情</a>
     ),
   },
 ];
@@ -444,11 +446,11 @@ const TradeRecords = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                label="证券名称"
+                label="底层证券名称"
                 name="name"
-                rules={[{ required: true, message: '请输入证券名称' }]}
+                rules={[{ required: true, message: '请输入底层证券名称' }]}
               >
-                <Input placeholder="例如：苹果公司" />
+                <Input placeholder="例如：苹果公司、特斯拉" />
               </Form.Item>
             </Col>
           </Row>
@@ -555,7 +557,7 @@ const TradeRecords = () => {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="证券代码">{detailRecord.symbol}</Descriptions.Item>
-            <Descriptions.Item label="证券名称">{detailRecord.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="底层证券名称">{detailRecord.name || '-'}</Descriptions.Item>
 <Descriptions.Item label="底层证券">{detailRecord.underlyingSymbol}</Descriptions.Item>
             <Descriptions.Item label="交易类型">
               <Tag color={{ BUY: 'green', SELL: 'red', OPTION_EXPIRE: 'default', EXERCISE_BUY: 'cyan', EXERCISE_SELL: 'orange', EARLY_EXERCISE: 'purple' }[detailRecord.tradeType] || 'default'}>
