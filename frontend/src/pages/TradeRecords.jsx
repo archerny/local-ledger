@@ -1,196 +1,34 @@
-import React, { useState } from 'react';
-import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col, Popconfirm, Space } from 'antd';
+import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
+import { fetchAllTradeRecords, createTradeRecord, deleteTradeRecord } from '../services/tradeRecordApi';
+import { fetchAllBrokers } from '../services/brokerApi';
+import { fetchAllStrategies } from '../services/strategyApi';
 
-// 交易记录示例数据
-const tradeRecordsData = [
-  {
-    key: '1',
-    id: 1,
-    date: '2024-01-15',
-    broker: '华泰证券',
-    assetType: '股票',
-    symbol: 'AAPL',
-    name: '苹果公司',
-    type: '买入',
-    quantity: 100,
-    price: 185.50,
-    amount: 18550.00,
-    fee: 9.28,
-    currency: 'USD',
-    strategy: 1,
-  },
-  {
-    key: '2',
-    id: 2,
-    date: '2024-01-16',
-    broker: '中信证券',
-    assetType: '股票',
-    symbol: '600519',
-    name: '贵州茅台',
-    type: '卖出',
-    quantity: 10,
-    price: 1680.00,
-    amount: 16800.00,
-    fee: 8.40,
-    currency: 'CNY',
-    strategy: 2,
-  },
-  {
-    key: '3',
-    id: 3,
-    date: '2024-01-18',
-    broker: '华泰证券',
-    assetType: '期权CALL',
-    symbol: 'TSLA 240119C210',
-    name: '特斯拉看涨期权',
-    underlyingSymbol: 'TSLA',
-    type: '买入',
-    quantity: 5,
-    price: 8.50,
-    amount: 4250.00,
-    fee: 3.25,
-    currency: 'USD',
-    strategy: 3,
-  },
-  {
-    key: '4',
-    id: 4,
-    date: '2024-01-20',
-    broker: '华泰证券',
-    assetType: '期权CALL',
-    symbol: 'TSLA 240119C210',
-    name: '特斯拉看涨期权',
-    underlyingSymbol: 'TSLA',
-    type: '期权到期',
-    quantity: 5,
-    price: 0.00,
-    amount: 0.00,
-    fee: 0.00,
-    currency: 'USD',
-    strategy: 3,
-  },
-  {
-    key: '5',
-    id: 5,
-    date: '2024-01-22',
-    broker: '华泰证券',
-    assetType: '期权CALL',
-    symbol: 'AAPL 240202C190',
-    name: '苹果看涨期权',
-    underlyingSymbol: 'AAPL',
-    type: '行权买入',
-    quantity: 10,
-    price: 190.00,
-    amount: 190000.00,
-    fee: 15.00,
-    currency: 'USD',
-    strategy: 1,
-  },
-  {
-    key: '6',
-    id: 6,
-    date: '2024-01-25',
-    broker: '华泰证券',
-    assetType: '期权PUT',
-    symbol: 'GOOG 240216P140',
-    name: '谷歌看跌期权',
-    underlyingSymbol: 'GOOG',
-    type: '买入',
-    quantity: 30,
-    price: 3.85,
-    amount: 11550.00,
-    fee: 5.78,
-    currency: 'USD',
-    strategy: 4,
-  },
-  {
-    key: '7',
-    id: 7,
-    date: '2024-02-16',
-    broker: '华泰证券',
-    assetType: '期权PUT',
-    symbol: 'GOOG 240216P140',
-    name: '谷歌看跌期权',
-    underlyingSymbol: 'GOOG',
-    type: '行权卖出',
-    quantity: 30,
-    price: 140.00,
-    amount: 420000.00,
-    fee: 20.00,
-    currency: 'USD',
-    strategy: 4,
-  },
-  {
-    key: '8',
-    id: 8,
-    date: '2024-01-28',
-    broker: '华泰证券',
-    assetType: 'ETF',
-    symbol: 'QQQ',
-    name: 'Invesco QQQ Trust',
-    type: '买入',
-    quantity: 50,
-    price: 421.35,
-    amount: 21067.50,
-    fee: 10.53,
-    currency: 'USD',
-    strategy: 5,
-  },
-  {
-    key: '9',
-    id: 9,
-    date: '2024-02-05',
-    broker: '华泰证券',
-    assetType: '股票',
-    symbol: 'MSFT',
-    name: '微软',
-    type: '买入',
-    quantity: 80,
-    price: 405.20,
-    amount: 32416.00,
-    fee: 16.21,
-    currency: 'USD',
-    strategy: 1,
-  },
-  {
-    key: '10',
-    id: 10,
-    date: '2024-02-10',
-    broker: '华泰证券',
-    assetType: '期权CALL',
-    symbol: 'MSFT 240315C420',
-    name: '微软看涨期权',
-    underlyingSymbol: 'MSFT',
-    type: '卖出',
-    quantity: 8,
-    price: 12.30,
-    amount: 9840.00,
-    fee: 4.92,
-    currency: 'USD',
-    strategy: 6,
-  },
-  {
-    key: '11',
-    id: 11,
-    date: '2024-02-12',
-    broker: '华泰证券',
-    assetType: '期权PUT',
-    symbol: 'NVDA 240322P700',
-    name: '英伟达看跌期权',
-    underlyingSymbol: 'NVDA',
-    type: '提前行权',
-    quantity: 10,
-    price: 700.00,
-    amount: 700000.00,
-    fee: 25.00,
-    currency: 'USD',
-    strategy: 7,
-  },
-];
+// 证券类型：后端枚举 <-> 前端中文
+const assetTypeMap = {
+  STOCK: '股票',
+  ETF: 'ETF',
+  OPTION_CALL: '期权CALL',
+  OPTION_PUT: '期权PUT',
+};
+const assetTypeReverseMap = Object.fromEntries(Object.entries(assetTypeMap).map(([k, v]) => [v, k]));
 
-// 交易记录表格列定义（需要 amountVisible 参数）
-const getTradeColumns = (amountVisible) => [
+// 交易类型：后端枚举 <-> 前端中文
+const tradeTypeMap = {
+  BUY: '买入',
+  SELL: '卖出',
+  OPTION_EXPIRE: '期权到期',
+  EXERCISE_BUY: '行权买入',
+  EXERCISE_SELL: '行权卖出',
+  EARLY_EXERCISE: '提前行权',
+};
+const tradeTypeReverseMap = Object.fromEntries(Object.entries(tradeTypeMap).map(([k, v]) => [v, k]));
+
+// 交易记录表格列定义（需要 amountVisible、brokerMap、strategyMap 参数）
+const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -200,15 +38,16 @@ const getTradeColumns = (amountVisible) => [
   },
   {
     title: '日期',
-    dataIndex: 'date',
-    key: 'date',
-    sorter: (a, b) => new Date(a.date) - new Date(b.date),
+    dataIndex: 'tradeDate',
+    key: 'tradeDate',
+    sorter: (a, b) => new Date(a.tradeDate) - new Date(b.tradeDate),
     width: 120,
   },
   {
     title: '券商',
-    dataIndex: 'broker',
-    key: 'broker',
+    dataIndex: 'brokerId',
+    key: 'brokerId',
+    render: (brokerId) => brokerMap[brokerId] || `ID:${brokerId}`,
     width: 120,
   },
   {
@@ -216,18 +55,16 @@ const getTradeColumns = (amountVisible) => [
     dataIndex: 'assetType',
     key: 'assetType',
     render: (assetType) => {
+      const label = assetTypeMap[assetType] || assetType;
       const colorMap = {
-        '股票': 'blue',
-        'ETF': 'cyan',
-        '期权CALL': 'green',
-        '期权PUT': 'red',      };
-      return <Tag color={colorMap[assetType] || 'default'}>{assetType}</Tag>;
+        STOCK: 'blue',
+        ETF: 'cyan',
+        OPTION_CALL: 'green',
+        OPTION_PUT: 'red',
+      };
+      return <Tag color={colorMap[assetType] || 'default'}>{label}</Tag>;
     },
-    filters: [
-      { text: '股票', value: '股票' },
-      { text: 'ETF', value: 'ETF' },
-      { text: '期权CALL', value: '期权CALL' },
-      { text: '期权PUT', value: '期权PUT' },    ],
+    filters: Object.entries(assetTypeMap).map(([value, text]) => ({ text, value })),
     onFilter: (value, record) => record.assetType === value,
     width: 100,
   },
@@ -249,35 +86,29 @@ const getTradeColumns = (amountVisible) => [
   },
   {
     title: '交易类型',
-    dataIndex: 'type',
-    key: 'type',
-    render: (type) => {
+    dataIndex: 'tradeType',
+    key: 'tradeType',
+    render: (tradeType) => {
+      const label = tradeTypeMap[tradeType] || tradeType;
       const typeColorMap = {
-        '买入': 'green',
-        '卖出': 'red',
-        '期权到期': 'default',
-        '行权买入': 'cyan',
-        '行权卖出': 'orange',
-        '提前行权': 'purple',
+        BUY: 'green',
+        SELL: 'red',
+        OPTION_EXPIRE: 'default',
+        EXERCISE_BUY: 'cyan',
+        EXERCISE_SELL: 'orange',
+        EARLY_EXERCISE: 'purple',
       };
-      return <Tag color={typeColorMap[type] || 'default'}>{type}</Tag>;
+      return <Tag color={typeColorMap[tradeType] || 'default'}>{label}</Tag>;
     },
-    filters: [
-      { text: '买入', value: '买入' },
-      { text: '卖出', value: '卖出' },
-      { text: '期权到期', value: '期权到期' },
-      { text: '行权买入', value: '行权买入' },
-      { text: '行权卖出', value: '行权卖出' },
-      { text: '提前行权', value: '提前行权' },
-    ],
-    onFilter: (value, record) => record.type === value,
+    filters: Object.entries(tradeTypeMap).map(([value, text]) => ({ text, value })),
+    onFilter: (value, record) => record.tradeType === value,
     width: 100,
   },
   {
     title: '数量',
     dataIndex: 'quantity',
     key: 'quantity',
-    render: (quantity) => amountVisible ? quantity.toLocaleString() : '****',
+    render: (quantity) => amountVisible ? (quantity != null ? quantity.toLocaleString() : '-') : '****',
     sorter: (a, b) => a.quantity - b.quantity,
     width: 100,
   },
@@ -285,7 +116,7 @@ const getTradeColumns = (amountVisible) => [
     title: '成交价格',
     dataIndex: 'price',
     key: 'price',
-    render: (price) => amountVisible ? price.toFixed(2) : '****',
+    render: (price) => amountVisible ? (price != null ? Number(price).toFixed(2) : '-') : '****',
     sorter: (a, b) => a.price - b.price,
     width: 120,
   },
@@ -296,19 +127,19 @@ const getTradeColumns = (amountVisible) => [
     render: (amount, record) => {
       if (!amountVisible) return <span style={{ fontWeight: 'bold', color: '#999' }}>****</span>;
       const amountColorMap = {
-        '买入': '#cf1322',
-        '卖出': '#3f8600',
-        '期权到期': '#999999',
-        '行权买入': '#cf1322',
-        '行权卖出': '#3f8600',
-        '提前行权': '#cf1322',
+        BUY: '#cf1322',
+        SELL: '#3f8600',
+        OPTION_EXPIRE: '#999999',
+        EXERCISE_BUY: '#cf1322',
+        EXERCISE_SELL: '#3f8600',
+        EARLY_EXERCISE: '#cf1322',
       };
       return (
-        <span style={{ 
-          color: amountColorMap[record.type] || '#000000',
+        <span style={{
+          color: amountColorMap[record.tradeType] || '#000000',
           fontWeight: 'bold'
         }}>
-          {amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {amount != null ? Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
         </span>
       );
     },
@@ -319,7 +150,7 @@ const getTradeColumns = (amountVisible) => [
     title: '交易费用',
     dataIndex: 'fee',
     key: 'fee',
-    render: (fee) => amountVisible ? fee.toFixed(2) : '****',
+    render: (fee) => amountVisible ? (fee != null ? Number(fee).toFixed(2) : '-') : '****',
     sorter: (a, b) => a.fee - b.fee,
     width: 120,
   },
@@ -328,31 +159,135 @@ const getTradeColumns = (amountVisible) => [
     dataIndex: 'currency',
     key: 'currency',
     render: (currency) => (
-      <Tag color={currency === 'CNY' ? 'blue' : 'purple'}>{currency}</Tag>
+      <Tag color={currency === 'CNY' ? 'blue' : currency === 'HKD' ? 'green' : 'purple'}>{currency}</Tag>
     ),
     filters: [
       { text: 'CNY', value: 'CNY' },
       { text: 'USD', value: 'USD' },
+      { text: 'HKD', value: 'HKD' },
     ],
     onFilter: (value, record) => record.currency === value,
     width: 80,
   },
   {
     title: '所属策略',
-    dataIndex: 'strategy',
-    key: 'strategy',
-    render: (strategy) => strategy ? strategy : '-',
+    dataIndex: 'strategyId',
+    key: 'strategyId',
+    render: (strategyId) => strategyId ? (strategyMap[strategyId] || `ID:${strategyId}`) : '-',
     width: 140,
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 80,
+    render: (_, record) => (
+      <Popconfirm
+        title="确认删除"
+        description={`确定要删除此交易记录吗？`}
+        onConfirm={() => onDelete(record)}
+        okText="确认"
+        cancelText="取消"
+        icon={<ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />}
+      >
+        <a style={{ color: '#ff4d4f' }}>删除</a>
+      </Popconfirm>
+    ),
   },
 ];
 
 const TradeRecords = () => {
+  const [tradeData, setTradeData] = useState([]);
+  const [brokerList, setBrokerList] = useState([]);
+  const [strategyList, setStrategyList] = useState([]);
+  const [brokerMap, setBrokerMap] = useState({});
+  const [strategyMap, setStrategyMap] = useState({});
+  const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [form] = Form.useForm();
   const { amountVisible } = useAmountVisibility();
-  const tradeColumns = getTradeColumns(amountVisible);
+
+  // 加载交易记录数据
+  const loadTradeRecords = async () => {
+    setLoading(true);
+    try {
+      const result = await fetchAllTradeRecords();
+      if (result.status === 'SUCCESS') {
+        const list = (result.data || []).map((item) => ({
+          ...item,
+          key: String(item.id),
+        }));
+        setTradeData(list);
+      } else {
+        message.error(result.message || '查询交易记录失败');
+      }
+    } catch (error) {
+      console.error('查询交易记录失败:', error);
+      message.error('查询交易记录失败，请检查后端服务是否启动');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 加载券商列表
+  const loadBrokers = async () => {
+    try {
+      const result = await fetchAllBrokers();
+      if (result.status === 'SUCCESS') {
+        const list = result.data || [];
+        setBrokerList(list);
+        const map = {};
+        list.forEach((b) => { map[b.id] = b.brokerName; });
+        setBrokerMap(map);
+      }
+    } catch (error) {
+      console.error('查询券商列表失败:', error);
+    }
+  };
+
+  // 加载策略列表
+  const loadStrategies = async () => {
+    try {
+      const result = await fetchAllStrategies();
+      if (result.status === 'SUCCESS') {
+        const list = result.data || [];
+        setStrategyList(list);
+        const map = {};
+        list.forEach((s) => { map[s.id] = s.strategyName; });
+        setStrategyMap(map);
+      }
+    } catch (error) {
+      console.error('查询策略列表失败:', error);
+    }
+  };
+
+  // 组件加载时获取数据
+  useEffect(() => {
+    loadTradeRecords();
+    loadBrokers();
+    loadStrategies();
+  }, []);
+
+  // 删除交易记录
+  const handleDelete = async (record) => {
+    try {
+      const result = await deleteTradeRecord(record.id);
+      if (result.status === 'SUCCESS') {
+        message.success('交易记录已删除');
+        loadTradeRecords();
+      } else {
+        message.error(result.message || '删除交易记录失败');
+      }
+    } catch (error) {
+      console.error('删除交易记录失败:', error);
+      const errorMsg = error.response?.data?.message || '删除交易记录失败，请稍后重试';
+      message.error(errorMsg);
+    }
+  };
+
+  const tradeColumns = getTradeColumns(amountVisible, brokerMap, strategyMap, handleDelete);
 
   const handleAddRecord = () => {
     setIsModalVisible(true);
@@ -366,29 +301,65 @@ const TradeRecords = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      console.log('提交的交易记录数据:', values);
-      message.success('交易记录添加成功！');
-      setIsModalVisible(false);
-      form.resetFields();
-      // TODO: 这里可以调用API将数据保存到后端
+      setSubmitting(true);
+
+      // 构建后端要求的数据格式
+      const payload = {
+        tradeDate: values.date.format('YYYY-MM-DD'),
+        brokerId: values.brokerId,
+        assetType: values.assetType,
+        symbol: values.symbol,
+        name: values.name,
+        underlyingSymbol: values.underlyingSymbol || null,
+        tradeType: values.tradeType,
+        quantity: values.quantity,
+        price: values.price,
+        amount: values.quantity * values.price,
+        fee: values.fee,
+        currency: values.currency,
+        strategyId: values.strategyId || null,
+      };
+
+      const result = await createTradeRecord(payload);
+      if (result.status === 'SUCCESS') {
+        message.success('交易记录添加成功！');
+        setIsModalVisible(false);
+        form.resetFields();
+        loadTradeRecords();
+      } else {
+        message.error(result.message || '新增交易记录失败');
+      }
     } catch (error) {
-      console.error('表单验证失败:', error);
+      if (error.errorFields) {
+        // 表单验证失败
+        console.error('表单验证失败:', error);
+      } else {
+        console.error('新增交易记录失败:', error);
+        const errorMsg = error.response?.data?.message || '新增交易记录失败，请稍后重试';
+        message.error(errorMsg);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <Card 
+    <Card
       title="交易记录"
       extra={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span>所属策略：</span>
-          <Input
+          <Select
             allowClear
-            placeholder="输入策略ID"
-            style={{ width: 120 }}
+            placeholder="选择策略"
+            style={{ width: 150 }}
             value={selectedStrategy}
-            onChange={(e) => setSelectedStrategy(e.target.value || null)}
-          />
+            onChange={(value) => setSelectedStrategy(value || null)}
+          >
+            {strategyList.map((s) => (
+              <Select.Option key={s.id} value={s.id}>{s.strategyName}</Select.Option>
+            ))}
+          </Select>
           <span>底层证券：</span>
           <Input
             allowClear
@@ -397,24 +368,26 @@ const TradeRecords = () => {
             value={selectedAsset}
             onChange={(e) => setSelectedAsset(e.target.value || null)}
           />
-          <Button type="primary" onClick={handleAddRecord}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRecord}>
             新增记录
           </Button>
         </div>
       }
     >
-      <Table 
-        columns={tradeColumns} 
-        dataSource={tradeRecordsData.filter((item) => {
-          if (selectedStrategy && String(item.strategy) !== selectedStrategy) return false;
+      <Table
+        columns={tradeColumns}
+        dataSource={tradeData.filter((item) => {
+          if (selectedStrategy && item.strategyId !== selectedStrategy) return false;
           if (selectedAsset) {
             const underlying = (item.underlyingSymbol || item.symbol || '').toUpperCase();
             if (!underlying.includes(selectedAsset.toUpperCase())) return false;
           }
           return true;
         })}
+        loading={loading}
+        rowKey="id"
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1430 }}
+        scroll={{ x: 1530 }}
       />
 
       <Modal
@@ -425,128 +398,131 @@ const TradeRecords = () => {
           <Button key="cancel" onClick={handleCancel}>
             取消
           </Button>,
-          <Button key="submit" type="primary" onClick={handleSubmit}>
+          <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>
             提交
           </Button>,
         ]}
-        width={600}
+        width={700}
+        destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
           initialValues={{
             currency: 'CNY',
-            type: '买入',
-            assetType: '股票',
+            tradeType: 'BUY',
+            assetType: 'STOCK',
           }}
+          style={{ marginTop: 20 }}
         >
-          <Form.Item
-            label="ID"
-            name="id"
-            rules={[{ required: true, message: '请输入交易ID' }]}
-          >
-            <InputNumber style={{ width: '100%' }} placeholder="请输入交易ID" min={1} />
-          </Form.Item>
-
-          <Form.Item
-            label="日期"
-            name="date"
-            rules={[{ required: true, message: '请选择交易日期' }]}
-          >
-            <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
-          </Form.Item>
-
-          <Form.Item
-            label="券商"
-            name="broker"
-            rules={[{ required: true, message: '请输入券商名称' }]}
-          >
-            <Input placeholder="例如：华泰证券" />
-          </Form.Item>
-
-          <Form.Item
-            label="证券类型"
-            name="assetType"
-rules={[{ required: true, message: '请选择证券类型' }]}
-          >
-            <Select>
-              <Select.Option value="股票">股票</Select.Option>
-              <Select.Option value="ETF">ETF</Select.Option>
-              <Select.Option value="期权CALL">期权CALL</Select.Option>
-              <Select.Option value="期权PUT">期权PUT</Select.Option>            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="股票代码"
-            name="symbol"
-            rules={[{ required: true, message: '请输入股票代码' }]}
-          >
-            <Input placeholder="例如：AAPL 或 600519" />
-          </Form.Item>
-
-          <Form.Item
-            label="底层证券"
-            name="name"
-rules={[{ required: true, message: '请输入底层证券' }]}
-          >
-            <Input placeholder="例如：苹果公司" />
-          </Form.Item>
-
-          <Form.Item
-            label="交易类型"
-            name="type"
-            rules={[{ required: true, message: '请选择交易类型' }]}
-          >
-            <Select>
-              <Select.Option value="买入">买入</Select.Option>
-              <Select.Option value="卖出">卖出</Select.Option>
-              <Select.Option value="期权到期">期权到期</Select.Option>
-              <Select.Option value="行权买入">行权买入</Select.Option>
-              <Select.Option value="行权卖出">行权卖出</Select.Option>
-              <Select.Option value="提前行权">提前行权</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="数量"
-            name="quantity"
-            rules={[
-              { required: true, message: '请输入交易数量' },
-              { type: 'number', min: 1, message: '数量必须大于0' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="请输入数量"
-              min={1}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="成交价格"
-            name="price"
-            rules={[
-              { required: true, message: '请输入成交价格' },
-              { type: 'number', min: 0.01, message: '价格必须大于0' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="请输入价格"
-              min={0.01}
-              precision={2}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="所属策略"
-            name="strategy"
-          >
-<InputNumber style={{ width: '100%' }} placeholder="请输入策略ID" min={1} />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="交易日期"
+                name="date"
+                rules={[{ required: true, message: '请选择交易日期' }]}
+              >
+                <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="券商"
+                name="brokerId"
+                rules={[{ required: true, message: '请选择券商' }]}
+              >
+                <Select placeholder="请选择券商">
+                  {brokerList.map((b) => (
+                    <Select.Option key={b.id} value={b.id}>{b.brokerName}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Row gutter={16}>
             <Col span={12}>
+              <Form.Item
+                label="证券类型"
+                name="assetType"
+                rules={[{ required: true, message: '请选择证券类型' }]}
+              >
+                <Select>
+                  {Object.entries(assetTypeMap).map(([value, label]) => (
+                    <Select.Option key={value} value={value}>{label}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="交易类型"
+                name="tradeType"
+                rules={[{ required: true, message: '请选择交易类型' }]}
+              >
+                <Select>
+                  {Object.entries(tradeTypeMap).map(([value, label]) => (
+                    <Select.Option key={value} value={value}>{label}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="证券代码"
+                name="symbol"
+                rules={[{ required: true, message: '请输入证券代码' }]}
+              >
+                <Input placeholder="例如：AAPL 或 600519" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="证券名称"
+                name="name"
+                rules={[{ required: true, message: '请输入证券名称' }]}
+              >
+                <Input placeholder="例如：苹果公司" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            label="底层证券代码（期权时填写，股票/ETF可不填）"
+            name="underlyingSymbol"
+          >
+            <Input placeholder="例如：TSLA、AAPL" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                label="数量"
+                name="quantity"
+                rules={[
+                  { required: true, message: '请输入交易数量' },
+                  { type: 'number', min: 1, message: '数量必须大于0' },
+                ]}
+              >
+                <InputNumber style={{ width: '100%' }} placeholder="请输入数量" min={1} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="成交价格"
+                name="price"
+                rules={[
+                  { required: true, message: '请输入成交价格' },
+                  { type: 'number', min: 0, message: '价格不能为负' },
+                ]}
+              >
+                <InputNumber style={{ width: '100%' }} placeholder="请输入价格" min={0} precision={4} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item
                 label="交易费用"
                 name="fee"
@@ -555,14 +531,12 @@ rules={[{ required: true, message: '请输入底层证券' }]}
                   { type: 'number', min: 0, message: '费用不能为负数' },
                 ]}
               >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  placeholder="请输入费用"
-                  min={0}
-                  precision={2}
-                />
+                <InputNumber style={{ width: '100%' }} placeholder="请输入费用" min={0} precision={2} />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 label="币种"
@@ -570,8 +544,21 @@ rules={[{ required: true, message: '请输入底层证券' }]}
                 rules={[{ required: true, message: '请选择币种' }]}
               >
                 <Select>
-                  <Select.Option value="CNY">CNY</Select.Option>
-                  <Select.Option value="USD">USD</Select.Option>
+                  <Select.Option value="CNY">CNY - 人民币</Select.Option>
+                  <Select.Option value="USD">USD - 美元</Select.Option>
+                  <Select.Option value="HKD">HKD - 港币</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="所属策略"
+                name="strategyId"
+              >
+                <Select allowClear placeholder="请选择策略（选填）">
+                  {strategyList.map((s) => (
+                    <Select.Option key={s.id} value={s.id}>{s.strategyName}</Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
