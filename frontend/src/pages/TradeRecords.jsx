@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col, Popconfirm, Space } from 'antd';
-import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col, Space, Descriptions } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
-import { fetchAllTradeRecords, createTradeRecord, deleteTradeRecord } from '../services/tradeRecordApi';
+import { fetchAllTradeRecords, createTradeRecord } from '../services/tradeRecordApi';
 import { fetchAllBrokers } from '../services/brokerApi';
 import { fetchAllStrategies } from '../services/strategyApi';
 
@@ -28,30 +28,16 @@ const tradeTypeMap = {
 const tradeTypeReverseMap = Object.fromEntries(Object.entries(tradeTypeMap).map(([k, v]) => [v, k]));
 
 // 交易记录表格列定义（需要 amountVisible、brokerMap、strategyMap 参数）
-const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
-  {
-    title: 'ID',
-    dataIndex: 'id',
-    key: 'id',
-    width: 70,
-    sorter: (a, b) => a.id - b.id,
-  },
+const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) => [
   {
     title: '日期',
     dataIndex: 'tradeDate',
     key: 'tradeDate',
     sorter: (a, b) => new Date(a.tradeDate) - new Date(b.tradeDate),
-    width: 120,
+    width: 110,
   },
   {
-    title: '券商',
-    dataIndex: 'brokerId',
-    key: 'brokerId',
-    render: (brokerId) => brokerMap[brokerId] || `ID:${brokerId}`,
-    width: 120,
-  },
-  {
-    title: '证券类型',
+    title: '类型',
     dataIndex: 'assetType',
     key: 'assetType',
     render: (assetType) => {
@@ -66,13 +52,14 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
     },
     filters: Object.entries(assetTypeMap).map(([value, text]) => ({ text, value })),
     onFilter: (value, record) => record.assetType === value,
-    width: 100,
+    width: 90,
   },
   {
     title: '代码',
     dataIndex: 'symbol',
     key: 'symbol',
-    width: 180,
+    ellipsis: true,
+    width: 160,
   },
   {
     title: '底层证券',
@@ -82,10 +69,10 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
       // 期权显示底层资产代号，股票/ETF显示自身代号
       return record.underlyingSymbol || record.symbol;
     },
-    width: 120,
+    width: 90,
   },
   {
-    title: '交易类型',
+    title: '方向',
     dataIndex: 'tradeType',
     key: 'tradeType',
     render: (tradeType) => {
@@ -102,7 +89,7 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
     },
     filters: Object.entries(tradeTypeMap).map(([value, text]) => ({ text, value })),
     onFilter: (value, record) => record.tradeType === value,
-    width: 100,
+    width: 90,
   },
   {
     title: '数量',
@@ -110,18 +97,18 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
     key: 'quantity',
     render: (quantity) => amountVisible ? (quantity != null ? quantity.toLocaleString() : '-') : '****',
     sorter: (a, b) => a.quantity - b.quantity,
-    width: 100,
+    width: 80,
   },
   {
-    title: '成交价格',
+    title: '价格',
     dataIndex: 'price',
     key: 'price',
     render: (price) => amountVisible ? (price != null ? Number(price).toFixed(2) : '-') : '****',
     sorter: (a, b) => a.price - b.price,
-    width: 120,
+    width: 90,
   },
   {
-    title: '成交金额',
+    title: '金额',
     dataIndex: 'amount',
     key: 'amount',
     render: (amount, record) => {
@@ -144,15 +131,15 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
       );
     },
     sorter: (a, b) => a.amount - b.amount,
-    width: 140,
+    width: 120,
   },
   {
-    title: '交易费用',
+    title: '费用',
     dataIndex: 'fee',
     key: 'fee',
     render: (fee) => amountVisible ? (fee != null ? Number(fee).toFixed(2) : '-') : '****',
     sorter: (a, b) => a.fee - b.fee,
-    width: 120,
+    width: 80,
   },
   {
     title: '币种',
@@ -170,27 +157,11 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onDelete) => [
     width: 80,
   },
   {
-    title: '所属策略',
-    dataIndex: 'strategyId',
-    key: 'strategyId',
-    render: (strategyId) => strategyId ? (strategyMap[strategyId] || `ID:${strategyId}`) : '-',
-    width: 140,
-  },
-  {
     title: '操作',
     key: 'action',
     width: 80,
     render: (_, record) => (
-      <Popconfirm
-        title="确认删除"
-        description={`确定要删除此交易记录吗？`}
-        onConfirm={() => onDelete(record)}
-        okText="确认"
-        cancelText="取消"
-        icon={<ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />}
-      >
-        <a style={{ color: '#ff4d4f' }}>删除</a>
-      </Popconfirm>
+<a onClick={() => onViewDetail(record)}>查看详情</a>
     ),
   },
 ];
@@ -270,24 +241,16 @@ const TradeRecords = () => {
     loadStrategies();
   }, []);
 
-  // 删除交易记录
-  const handleDelete = async (record) => {
-    try {
-      const result = await deleteTradeRecord(record.id);
-      if (result.status === 'SUCCESS') {
-        message.success('交易记录已删除');
-        loadTradeRecords();
-      } else {
-        message.error(result.message || '删除交易记录失败');
-      }
-    } catch (error) {
-      console.error('删除交易记录失败:', error);
-      const errorMsg = error.response?.data?.message || '删除交易记录失败，请稍后重试';
-      message.error(errorMsg);
-    }
+  // 查看详情
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailRecord, setDetailRecord] = useState(null);
+
+  const handleViewDetail = (record) => {
+    setDetailRecord(record);
+    setDetailVisible(true);
   };
 
-  const tradeColumns = getTradeColumns(amountVisible, brokerMap, strategyMap, handleDelete);
+  const tradeColumns = getTradeColumns(amountVisible, brokerMap, strategyMap, handleViewDetail);
 
   const handleAddRecord = () => {
     setIsModalVisible(true);
@@ -310,7 +273,7 @@ const TradeRecords = () => {
         assetType: values.assetType,
         symbol: values.symbol,
         name: values.name,
-        underlyingSymbol: values.underlyingSymbol || null,
+        underlyingSymbol: values.underlyingSymbol,
         tradeType: values.tradeType,
         quantity: values.quantity,
         price: values.price,
@@ -387,7 +350,7 @@ const TradeRecords = () => {
         loading={loading}
         rowKey="id"
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1530 }}
+        size="middle"
       />
 
       <Modal
@@ -409,7 +372,7 @@ const TradeRecords = () => {
           form={form}
           layout="vertical"
           initialValues={{
-            currency: 'CNY',
+            currency: 'USD',
             tradeType: 'BUY',
             assetType: 'STOCK',
           }}
@@ -491,8 +454,10 @@ const TradeRecords = () => {
           </Row>
 
           <Form.Item
-            label="底层证券代码（期权时填写，股票/ETF可不填）"
+            label="底层证券代码"
             name="underlyingSymbol"
+            rules={[{ required: true, message: '请输入底层证券代码' }]}
+            extra="用于关联分析期权与正股收益，例如：TSLA、AAPL"
           >
             <Input placeholder="例如：TSLA、AAPL" />
           </Form.Item>
@@ -564,6 +529,61 @@ const TradeRecords = () => {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      {/* 查看详情弹框 */}
+      <Modal
+        title="交易记录详情"
+        open={detailVisible}
+        onCancel={() => setDetailVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setDetailVisible(false)}>
+            关闭
+          </Button>,
+        ]}
+        width={650}
+        destroyOnClose
+      >
+        {detailRecord && (
+          <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
+            <Descriptions.Item label="ID">{detailRecord.id}</Descriptions.Item>
+            <Descriptions.Item label="交易日期">{detailRecord.tradeDate}</Descriptions.Item>
+            <Descriptions.Item label="券商">{brokerMap[detailRecord.brokerId] || `ID:${detailRecord.brokerId}`}</Descriptions.Item>
+            <Descriptions.Item label="证券类型">
+              <Tag color={{ STOCK: 'blue', ETF: 'cyan', OPTION_CALL: 'green', OPTION_PUT: 'red' }[detailRecord.assetType] || 'default'}>
+                {assetTypeMap[detailRecord.assetType] || detailRecord.assetType}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="证券代码">{detailRecord.symbol}</Descriptions.Item>
+            <Descriptions.Item label="证券名称">{detailRecord.name || '-'}</Descriptions.Item>
+<Descriptions.Item label="底层证券">{detailRecord.underlyingSymbol}</Descriptions.Item>
+            <Descriptions.Item label="交易类型">
+              <Tag color={{ BUY: 'green', SELL: 'red', OPTION_EXPIRE: 'default', EXERCISE_BUY: 'cyan', EXERCISE_SELL: 'orange', EARLY_EXERCISE: 'purple' }[detailRecord.tradeType] || 'default'}>
+                {tradeTypeMap[detailRecord.tradeType] || detailRecord.tradeType}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="数量">
+              {amountVisible ? (detailRecord.quantity != null ? detailRecord.quantity.toLocaleString() : '-') : '****'}
+            </Descriptions.Item>
+            <Descriptions.Item label="成交价格">
+              {amountVisible ? (detailRecord.price != null ? Number(detailRecord.price).toFixed(4) : '-') : '****'}
+            </Descriptions.Item>
+            <Descriptions.Item label="成交金额">
+              {amountVisible ? (detailRecord.amount != null ? Number(detailRecord.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-') : '****'}
+            </Descriptions.Item>
+            <Descriptions.Item label="交易费用">
+              {amountVisible ? (detailRecord.fee != null ? Number(detailRecord.fee).toFixed(2) : '-') : '****'}
+            </Descriptions.Item>
+            <Descriptions.Item label="币种">
+              <Tag color={detailRecord.currency === 'CNY' ? 'blue' : detailRecord.currency === 'HKD' ? 'green' : 'purple'}>
+                {detailRecord.currency}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="所属策略">
+              {detailRecord.strategyId ? (strategyMap[detailRecord.strategyId] || `ID:${detailRecord.strategyId}`) : '-'}
+            </Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </Card>
   );

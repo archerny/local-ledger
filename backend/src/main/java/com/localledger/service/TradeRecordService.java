@@ -95,6 +95,10 @@ public class TradeRecordService {
         if (!brokerRepository.existsById(record.getBrokerId())) {
             throw new IllegalArgumentException("券商不存在, ID: " + record.getBrokerId());
         }
+        // 校验底层证券代码不能为空
+        if (record.getUnderlyingSymbol() == null || record.getUnderlyingSymbol().trim().isEmpty()) {
+            throw new IllegalArgumentException("底层证券代码不能为空，用于关联分析期权与正股收益");
+        }
         // 校验策略是否存在（如果指定了策略）
         if (record.getStrategyId() != null) {
             if (!strategyRepository.existsById(record.getStrategyId())) {

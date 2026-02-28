@@ -58,9 +58,9 @@ public class TradeRecord extends BaseEntity {
     private String name;
 
     /**
-     * 底层证券代码，期权时填写对应标的代码
+     * 底层证券代码，用于关联分析期权与正股收益，如 TSLA、AAPL
      */
-    @Column(name = "underlying_symbol", length = 50)
+    @Column(name = "underlying_symbol", length = 50, nullable = false)
     private String underlyingSymbol;
 
     /**
