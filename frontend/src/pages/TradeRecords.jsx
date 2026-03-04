@@ -269,6 +269,9 @@ const TradeRecords = () => {
       setSubmitting(true);
 
       // 构建后端要求的数据格式
+      // 期权（OPTION_CALL / OPTION_PUT）一个合约对应100股正股，金额需要乘以100
+      const isOption = values.assetType === 'OPTION_CALL' || values.assetType === 'OPTION_PUT';
+      const multiplier = isOption ? 100 : 1;
       const payload = {
         tradeDate: values.date.format('YYYY-MM-DD'),
         brokerId: values.brokerId,
@@ -279,7 +282,7 @@ const TradeRecords = () => {
         tradeType: values.tradeType,
         quantity: values.quantity,
         price: values.price,
-        amount: values.quantity * values.price,
+        amount: values.quantity * values.price * multiplier,
         fee: values.fee,
         currency: values.currency,
         strategyId: values.strategyId || null,

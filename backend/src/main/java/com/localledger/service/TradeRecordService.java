@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +114,8 @@ public class TradeRecordService {
         if (record.getPrice() == null || record.getPrice().signum() < 0) {
             throw new IllegalArgumentException("成交价格不能为负数");
         }
+        // 自动计算金额：期权（OPTION_CALL / OPTION_PUT）一个合约对应100股正股，金额需要乘以100
+        recalculateAmount(record);
         return tradeRecordRepository.save(record);
     }
 
@@ -149,8 +152,25 @@ public class TradeRecordService {
         existing.setFee(recordData.getFee());
         existing.setCurrency(recordData.getCurrency());
         existing.setStrategyId(recordData.getStrategyId());
-
+        // 自动计算金额：期权（OPTION_CALL / OPTION_PUT）一个合约对应100股正股，金额需要乘以100
+        recalculateAmount(existing);
         return tradeRecordRepository.save(existing);
+    }
+
+    /**
+     * 根据证券类型自动计算成交金额
+     * 期权（OPTION_CALL / OPTION_PUT）一个合约对应100股正股，金额 = 数量 × 价格 × 100
+     * 其他类型（股票、ETF等），金额 = 数量 × 价格
+     */
+    private void recalculateAmount(TradeRecord record) {
+        if (record.getQuantity() != null && record.getPrice() != null) {
+            BigDecimal qty = BigDecimal.valueOf(record.getQuantity());
+            BigDecimal amount = qty.multiply(record.getPrice());
+            if (record.getAssetType() == AssetType.OPTION_CALL || record.getAssetType() == AssetType.OPTION_PUT) {
+                amount = amount.multiply(BigDecimal.valueOf(100));
+            }
+            record.setAmount(amount);
+        }
     }
 
     /**
