@@ -12,6 +12,7 @@ import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
 import StrategyManagement from '../pages/StrategyManagement';
 import TradeAnomalyAnalysis from '../pages/TradeAnomalyAnalysis';
+import MarketEvents from '../pages/MarketEvents';
 import { AmountVisibilityProvider, useAmountVisibility } from '../contexts/AmountVisibilityContext';
 import './AppLayout.css';
 
@@ -106,6 +107,8 @@ const AppLayout = () => {
         return <StrategyManagement />;
       case '8':
         return <TradeAnomalyAnalysis />;
+      case '9':
+        return <MarketEvents />;
       default:
         return <Dashboard />;
     }

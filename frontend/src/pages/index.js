@@ -6,3 +6,4 @@ export { default as ProfitAnalysis } from './ProfitAnalysis';
 export { default as Settings } from './Settings';
 export { default as StrategyManagement } from './StrategyManagement';
 export { default as TradeAnomalyAnalysis } from './TradeAnomalyAnalysis';
+export { default as MarketEvents } from './MarketEvents';

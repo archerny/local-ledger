@@ -9,6 +9,7 @@ import {
   SwapOutlined,
   BulbOutlined,
   AuditOutlined,
+  AlertOutlined,
 } from '@ant-design/icons';
 
 // 菜单 key 与 URL hash 路径的映射
@@ -19,6 +20,7 @@ export const menuKeyToPath = {
   '3': 'trades',
   '7': 'strategy',
   '8': 'anomaly',
+  '9': 'market-events',
   '4': 'profit',
   '5': 'settings',
 };
@@ -35,6 +37,7 @@ export const menuKeyToParent = {
   '3': 'trade',
   '7': 'trade',
   '8': 'trade',
+  '9': 'trade',
 };
 
 // 菜单项配置
@@ -79,7 +82,12 @@ export const menuItems = [
       {
         key: '8',
         icon: React.createElement(AuditOutlined),
-        label: '记录异动分析',
+        label: '交易数据分析',
+      },
+      {
+        key: '9',
+        icon: React.createElement(AlertOutlined),
+        label: '市场异动事件',
       },
     ],
   },

@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Card, Table, Tag, Button, message, Statistic, Space, Result, Spin, Typography, Tooltip } from 'antd';
+import {
+  Card, Table, Tag, Button, message, Statistic, Space, Result, Spin, Typography, Tooltip,
+} from 'antd';
 import {
   CheckCircleOutlined,
-  CloseCircleOutlined,
   ExclamationCircleOutlined,
   ReloadOutlined,
   AuditOutlined,
@@ -20,16 +21,11 @@ const ruleColorMap = {
   '美股证券代码格式': 'blue',
 };
 
-/**
- * 记录异动分析页面
- * 调用后端交易数据核对接口，展示核对结果和异常详情
- */
 const TradeAnomalyAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
   const [hasChecked, setHasChecked] = useState(false);
 
-  // 执行核对
   const handleVerify = useCallback(async () => {
     setLoading(true);
     try {
@@ -53,7 +49,6 @@ const TradeAnomalyAnalysis = () => {
     }
   }, []);
 
-  // 异常详情表格列
   const errorColumns = [
     {
       title: '记录ID',
@@ -129,7 +124,6 @@ const TradeAnomalyAnalysis = () => {
     },
   ];
 
-  // 按规则分组统计
   const getRuleStats = () => {
     if (!verificationResult || !verificationResult.errors) return [];
     const ruleMap = {};
@@ -144,30 +138,26 @@ const TradeAnomalyAnalysis = () => {
 
   return (
     <div>
-      {/* 顶部操作栏 */}
-      <Card
-        style={{ marginBottom: 16 }}
-        bodyStyle={{ padding: '16px 24px' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <AuditOutlined style={{ fontSize: 22, color: '#1677ff' }} />
-            <div>
-              <Title level={5} style={{ margin: 0 }}>记录异动分析</Title>
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                基于预设规则，对所有交易记录进行数据完整性和一致性核对
-              </Text>
-            </div>
+      {/* 顶部标题栏 */}
+      <Card style={{ marginBottom: 16 }} bodyStyle={{ padding: '16px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <AuditOutlined style={{ fontSize: 22, color: '#1677ff' }} />
+          <div>
+            <Title level={5} style={{ margin: 0 }}>交易数据分析</Title>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              基于预设规则，对所有交易记录进行数据完整性和一致性分析，后续将持续扩展更多分析能力
+            </Text>
           </div>
-          <Button
-            type="primary"
-            icon={hasChecked ? <ReloadOutlined /> : <FileSearchOutlined />}
-            onClick={handleVerify}
-            loading={loading}
-            size="large"
-          >
-            {hasChecked ? '重新核对' : '开始核对'}
-          </Button>
+          <div style={{ marginLeft: 'auto' }}>
+            <Button
+              type="primary"
+              icon={hasChecked ? <ReloadOutlined /> : <FileSearchOutlined />}
+              onClick={handleVerify}
+              loading={loading}
+            >
+              {hasChecked ? '重新核对' : '开始核对'}
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -197,17 +187,11 @@ const TradeAnomalyAnalysis = () => {
       {/* 核对结果 */}
       {hasChecked && !loading && verificationResult && (
         <>
-          {/* 统计概览 */}
           <Card style={{ marginBottom: 16 }} bodyStyle={{ padding: '16px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-              {/* 核对状态图标 */}
               <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: 56, height: 56, borderRadius: 28,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: verificationResult.passed ? '#f6ffed' : '#fff2f0',
               }}>
                 {verificationResult.passed
@@ -215,8 +199,6 @@ const TradeAnomalyAnalysis = () => {
                   : <ExclamationCircleOutlined style={{ fontSize: 28, color: '#ff4d4f' }} />
                 }
               </div>
-
-              {/* 核对结论 */}
               <div>
                 <Text strong style={{ fontSize: 16 }}>
                   {verificationResult.passed ? '全部通过' : '发现异常'}
@@ -229,56 +211,25 @@ const TradeAnomalyAnalysis = () => {
                   }
                 </Text>
               </div>
-
-              {/* 统计数字 */}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 40 }}>
-                <Statistic
-                  title="核对总数"
-                  value={verificationResult.totalChecked}
-                  suffix="条"
-                  valueStyle={{ fontSize: 22 }}
-                />
-                <Statistic
-                  title="异常数量"
-                  value={verificationResult.errorCount}
-                  suffix="条"
-                  valueStyle={{
-                    fontSize: 22,
-                    color: verificationResult.errorCount > 0 ? '#ff4d4f' : '#52c41a',
-                  }}
-                />
-                <Statistic
-                  title="通过率"
-                  value={
-                    verificationResult.totalChecked > 0
-                      ? (((verificationResult.totalChecked - verificationResult.errorCount) / verificationResult.totalChecked) * 100).toFixed(1)
-                      : 100
-                  }
+                <Statistic title="核对总数" value={verificationResult.totalChecked} suffix="条" valueStyle={{ fontSize: 22 }} />
+                <Statistic title="异常数量" value={verificationResult.errorCount} suffix="条"
+                  valueStyle={{ fontSize: 22, color: verificationResult.errorCount > 0 ? '#ff4d4f' : '#52c41a' }} />
+                <Statistic title="通过率"
+                  value={verificationResult.totalChecked > 0
+                    ? (((verificationResult.totalChecked - verificationResult.errorCount) / verificationResult.totalChecked) * 100).toFixed(1)
+                    : 100}
                   suffix="%"
-                  valueStyle={{
-                    fontSize: 22,
-                    color: verificationResult.passed ? '#52c41a' : '#faad14',
-                  }}
-                />
+                  valueStyle={{ fontSize: 22, color: verificationResult.passed ? '#52c41a' : '#faad14' }} />
               </div>
             </div>
           </Card>
 
-          {/* 规则分类统计 */}
           {verificationResult.errorCount > 0 && (
-            <Card
-              title="异常分布"
-              size="small"
-              style={{ marginBottom: 16 }}
-              bodyStyle={{ padding: '12px 24px' }}
-            >
+            <Card title="异常分布" size="small" style={{ marginBottom: 16 }} bodyStyle={{ padding: '12px 24px' }}>
               <Space size={16} wrap>
                 {getRuleStats().map((stat) => (
-                  <Tag
-                    key={stat.name}
-                    color={ruleColorMap[stat.name] || 'default'}
-                    style={{ padding: '4px 12px', fontSize: 13 }}
-                  >
+                  <Tag key={stat.name} color={ruleColorMap[stat.name] || 'default'} style={{ padding: '4px 12px', fontSize: 13 }}>
                     {stat.name}：{stat.count} 条
                   </Tag>
                 ))}
@@ -286,22 +237,13 @@ const TradeAnomalyAnalysis = () => {
             </Card>
           )}
 
-          {/* 异常详情表格 */}
           {verificationResult.errorCount > 0 && (
-            <Card
-              title={`异常记录详情（共 ${verificationResult.errorCount} 条）`}
-              size="small"
-            >
+            <Card title={`异常记录详情（共 ${verificationResult.errorCount} 条）`} size="small">
               <Table
                 columns={errorColumns}
                 dataSource={verificationResult.errors}
                 rowKey={(record, index) => `${record.recordId}-${record.ruleName}-${index}`}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  pageSizeOptions: ['10', '20', '50'],
-                  showTotal: (total) => `共 ${total} 条异常`,
-                }}
+                pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total) => `共 ${total} 条异常` }}
                 size="small"
                 scroll={{ x: 1100 }}
               />
