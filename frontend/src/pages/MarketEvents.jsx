@@ -809,7 +809,7 @@ const MarketEvents = () => {
       key: 'symbolChange',
       label: (
         <span>
-          <SwapOutlined />
+          <SwapOutlined style={{ marginRight: 6 }} />
           代码变更
         </span>
       ),
@@ -819,7 +819,7 @@ const MarketEvents = () => {
       key: 'stockSplit',
       label: (
         <span>
-          <SplitCellsOutlined />
+          <SplitCellsOutlined style={{ marginRight: 6 }} />
           拆股事件
         </span>
       ),
@@ -829,7 +829,7 @@ const MarketEvents = () => {
       key: 'dividendInKind',
       label: (
         <span>
-          <GiftOutlined />
+          <GiftOutlined style={{ marginRight: 6 }} />
           实物分红
         </span>
       ),
