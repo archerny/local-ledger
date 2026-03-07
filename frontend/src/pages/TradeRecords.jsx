@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col, Space, Descriptions, Statistic, Divider } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { Pie } from '@ant-design/charts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import dayjs from 'dayjs';
 import { useAmountVisibility } from '../contexts/AmountVisibilityContext';
 import { fetchAllTradeRecords, createTradeRecord, fetchTradeStatistics } from '../services/tradeRecordApi';
@@ -47,7 +47,7 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) =>
         STOCK: 'blue',
         ETF: 'cyan',
         OPTION_CALL: 'green',
-        OPTION_PUT: 'red',
+        OPTION_PUT: 'volcano',
       };
       return <Tag color={colorMap[assetType] || 'default'}>{label}</Tag>;
     },
@@ -366,47 +366,47 @@ const TradeRecords = () => {
     { type: 'ETF', value: statistics.etfCount || 0 },
   ].filter(item => item.value > 0) : [];
 
-  // 饼图配置
-  const pieConfig = {
-    data: pieData,
-    angleField: 'value',
-    colorField: 'type',
-    color: ['#1890ff', '#52c41a', '#f5222d', '#13c2c2'],
-    radius: 0.8,
-    innerRadius: 0.5,
-    label: {
-      text: (d) => `${statistics ? ((d.value / statistics.totalCount) * 100).toFixed(1) : 0}%`,
-      style: {
-        fontSize: 12,
-        fontWeight: 'bold',
-      },
-    },
-    legend: {
-      color: {
-        title: false,
-        position: 'right',
-        rowPadding: 5,
-        itemLabelText: (datum) => {
-          const item = pieData.find(d => d.type === datum.label);
-          const count = item ? item.value : 0;
-          return `${datum.label}  ${count}次`;
-        },
-      },
-    },
-    tooltip: {
-      title: 'type',
-      items: [
-        (d) => ({
-          name: d.type,
-          value: `${d.value}次 (${statistics ? ((d.value / statistics.totalCount) * 100).toFixed(1) : 0}%)`,
-        }),
-      ],
-    },
-    interactions: [{ type: 'element-active' }],
-    style: {
-      stroke: '#fff',
-      lineWidth: 2,
-    },
+  // 饼图颜色映射
+  const PIE_COLORS = {
+    '股票': '#1890ff',
+    'CALL期权': '#52c41a',
+    'PUT期权': '#ff7875',
+    'ETF': '#13c2c2',
+  };
+
+  // 自定义饼图标签渲染
+  const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    return (
+      <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight="bold">
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
+    );
+  };
+
+  // 自定义 Tooltip
+  const PieTooltipContent = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const percent = statistics ? ((data.value / statistics.totalCount) * 100).toFixed(1) : 0;
+      return (
+        <div style={{ background: '#fff', padding: '8px 12px', border: '1px solid #e8e8e8', borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+          <div style={{ color: data.payload.fill || '#333', fontWeight: 500 }}>{data.name}</div>
+          <div style={{ color: '#666', fontSize: 13 }}>{`${data.value}次 (${percent}%)`}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // 自定义图例格式化
+  const pieLegendFormatter = (value) => {
+    const item = pieData.find(d => d.type === value);
+    const count = item ? item.value : 0;
+    return <span style={{ color: '#666', fontSize: 13 }}>{value}  {count}次</span>;
   };
 
   return (
@@ -464,7 +464,38 @@ const TradeRecords = () => {
           <Col span={9}>
             <Card title="交易类型分布" size="small" style={{ height: '100%' }}>
               {pieData.length > 0 ? (
-                <Pie {...pieConfig} height={280} />
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="type"
+                      cx="40%"
+                      cy="50%"
+                      outerRadius={100}
+                      innerRadius={50}
+                      stroke="#fff"
+                      strokeWidth={2}
+                      label={renderPieLabel}
+                      labelLine={false}
+                      isAnimationActive={true}
+                    >
+                      {pieData.map((entry) => (
+                        <Cell key={entry.type} fill={PIE_COLORS[entry.type] || '#8884d8'} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltipContent />} />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      formatter={pieLegendFormatter}
+                      iconType="circle"
+                      iconSize={10}
+                      wrapperStyle={{ paddingLeft: 20 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               ) : (
                 <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
                   暂无交易数据
@@ -472,58 +503,70 @@ const TradeRecords = () => {
               )}
             </Card>
           </Col>
-          {/* 右侧：Top 10 热门证券（纯 CSS 水平直方图） */}
+          {/* 右侧：Top 10 热门证券（Recharts 水平条形图） */}
           <Col span={9}>
             <Card title="Top 10 热门证券" size="small" style={{ height: '100%' }}>
               {statistics.topSymbols && statistics.topSymbols.length > 0 ? (() => {
                 const barColors = ['#597ef7', '#73d13d', '#ff7a45', '#36cfc9', '#f759ab',
                                    '#ffc53d', '#40a9ff', '#9254de', '#ff4d4f', '#95de64'];
-                const maxCount = Math.max(...statistics.topSymbols.map(d => d.count));
+                // 为每条数据附加颜色
+                const barData = statistics.topSymbols.map((item, idx) => ({
+                  symbol: item.symbol,
+                  count: item.count,
+                  fill: barColors[idx % barColors.length],
+                })); // 后端已按 count 降序排列，直接使用
+
+                // 自定义 Tooltip
+                const BarTooltipContent = ({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div style={{ background: '#fff', padding: '6px 12px', border: '1px solid #e8e8e8', borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                        <div style={{ color: '#333', fontWeight: 500, marginBottom: 2 }}>{data.symbol}</div>
+                        <div style={{ color: '#666', fontSize: 13 }}>交易次数：<span style={{ color: data.fill, fontWeight: 'bold' }}>{data.count}次</span></div>
+                      </div>
+                    );
+                  }
+                  return null;
+                };
+
                 return (
-                  <div style={{ height: 280, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '4px 0' }}>
-                    {statistics.topSymbols.map((item, idx) => {
-                      const percent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                      return (
-                        <div key={item.symbol} style={{ display: 'flex', alignItems: 'center', height: 24 }}>
-                          {/* 证券名称 */}
-                          <div style={{
-                            width: 80,
-                            flexShrink: 0,
-                            fontSize: 12,
-                            color: '#333',
-                            textAlign: 'right',
-                            paddingRight: 8,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }} title={item.symbol}>
-                            {item.symbol}
-                          </div>
-                          {/* 条形区域 */}
-                          <div style={{ flex: 1, position: 'relative', height: 18 }}>
-                            <div style={{
-                              width: `${Math.max(percent, 2)}%`,
-                              height: '100%',
-                              backgroundColor: barColors[idx % barColors.length],
-                              borderRadius: '0 4px 4px 0',
-                              transition: 'width 0.3s ease',
-                            }} />
-                          </div>
-                          {/* 数值标签 */}
-                          <div style={{
-                            width: 40,
-                            flexShrink: 0,
-                            fontSize: 12,
-                            color: '#666',
-                            textAlign: 'left',
-                            paddingLeft: 6,
-                          }}>
-                            {item.count}次
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart
+                      data={barData}
+                      layout="vertical"
+                      margin={{ top: 4, right: 40, bottom: 4, left: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                      <XAxis
+                        type="number"
+                        allowDecimals={false}
+                        tick={{ fontSize: 12, fill: '#999' }}
+                        axisLine={{ stroke: '#e8e8e8' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="symbol"
+                        width={72}
+                        tick={{ fontSize: 12, fill: '#333' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip content={<BarTooltipContent />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                      <Bar
+                        dataKey="count"
+                        radius={[0, 4, 4, 0]}
+                        barSize={16}
+                        isAnimationActive={true}
+                        label={{ position: 'right', fill: '#666', fontSize: 12, formatter: (v) => `${v}次` }}
+                      >
+                        {barData.map((entry, idx) => (
+                          <Cell key={`bar-${idx}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 );
               })() : (
                 <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
@@ -795,7 +838,7 @@ const TradeRecords = () => {
             <Descriptions.Item label="交易日期">{detailRecord.tradeDate}</Descriptions.Item>
             <Descriptions.Item label="券商">{brokerMap[detailRecord.brokerId] || `ID:${detailRecord.brokerId}`}</Descriptions.Item>
             <Descriptions.Item label="证券类型">
-              <Tag color={{ STOCK: 'blue', ETF: 'cyan', OPTION_CALL: 'green', OPTION_PUT: 'red' }[detailRecord.assetType] || 'default'}>
+              <Tag color={{ STOCK: 'blue', ETF: 'cyan', OPTION_CALL: 'green', OPTION_PUT: 'volcano' }[detailRecord.assetType] || 'default'}>
                 {assetTypeMap[detailRecord.assetType] || detailRecord.assetType}
               </Tag>
             </Descriptions.Item>
