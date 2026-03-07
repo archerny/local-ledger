@@ -24,7 +24,6 @@ const tradeTypeMap = {
   OPTION_EXPIRE: '期权到期',
   EXERCISE_BUY: '行权买股',
   EXERCISE_SELL: '行权卖股',
-  EARLY_EXERCISE: '提前行权',
 };
 const tradeTypeReverseMap = Object.fromEntries(Object.entries(tradeTypeMap).map(([k, v]) => [v, k]));
 
@@ -86,7 +85,6 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) =>
         OPTION_EXPIRE: 'default',
         EXERCISE_BUY: 'cyan',
         EXERCISE_SELL: 'orange',
-        EARLY_EXERCISE: 'purple',
       };
       return <Tag color={typeColorMap[tradeType] || 'default'}>{label}</Tag>;
     },
@@ -122,7 +120,6 @@ const getTradeColumns = (amountVisible, brokerMap, strategyMap, onViewDetail) =>
         OPTION_EXPIRE: '#999999',
         EXERCISE_BUY: '#cf1322',
         EXERCISE_SELL: '#3f8600',
-        EARLY_EXERCISE: '#cf1322',
       };
       return (
         <span style={{
@@ -846,7 +843,7 @@ const TradeRecords = () => {
             <Descriptions.Item label="底层证券名称">{detailRecord.name || '-'}</Descriptions.Item>
 <Descriptions.Item label="底层证券">{detailRecord.underlyingSymbol}</Descriptions.Item>
             <Descriptions.Item label="交易类型">
-              <Tag color={{ BUY: 'green', SELL: 'red', OPTION_EXPIRE: 'default', EXERCISE_BUY: 'cyan', EXERCISE_SELL: 'orange', EARLY_EXERCISE: 'purple' }[detailRecord.tradeType] || 'default'}>
+              <Tag color={{ BUY: 'green', SELL: 'red', OPTION_EXPIRE: 'default', EXERCISE_BUY: 'cyan', EXERCISE_SELL: 'orange' }[detailRecord.tradeType] || 'default'}>
                 {tradeTypeMap[detailRecord.tradeType] || detailRecord.tradeType}
               </Tag>
             </Descriptions.Item>

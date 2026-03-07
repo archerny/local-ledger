@@ -14,7 +14,5 @@ public enum TradeType {
     /** 行权买股 */
     EXERCISE_BUY,
     /** 行权卖股 */
-    EXERCISE_SELL,
-    /** 提前行权 */
-    EARLY_EXERCISE
+    EXERCISE_SELL
 }

@@ -64,7 +64,7 @@ public class TradeRecord extends BaseEntity {
     private String underlyingSymbol;
 
     /**
-     * 交易类型：BUY-买入，SELL-卖出，OPTION_EXPIRE-期权到期，EXERCISE_BUY-行权买股，EXERCISE_SELL-行权卖股，EARLY_EXERCISE-提前行权
+     * 交易类型：BUY-买入，SELL-卖出，OPTION_EXPIRE-期权到期，EXERCISE_BUY-行权买股，EXERCISE_SELL-行权卖股
      */
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
