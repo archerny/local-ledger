@@ -86,4 +86,14 @@ public interface TradeRecordRepository extends BaseRepository<TradeRecord, Long>
      */
     @Query("SELECT t.underlyingSymbol, COUNT(t) as cnt FROM TradeRecord t WHERE t.isDeleted = false AND t.underlyingSymbol IS NOT NULL GROUP BY t.underlyingSymbol ORDER BY cnt DESC")
     List<Object[]> findTopTradedSymbols();
+
+    /**
+     * 查询截止某日期的所有未删除交易记录（按交易日期正序，方便按时间顺序计算持仓）
+     */
+    List<TradeRecord> findByTradeDateLessThanEqualAndIsDeletedFalseOrderByTradeDateAsc(LocalDate date);
+
+    /**
+     * 查询截止某日期、指定券商的所有未删除交易记录（按交易日期正序）
+     */
+    List<TradeRecord> findByTradeDateLessThanEqualAndBrokerIdAndIsDeletedFalseOrderByTradeDateAsc(LocalDate date, Long brokerId);
 }
