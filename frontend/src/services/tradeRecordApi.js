@@ -102,3 +102,12 @@ export const deleteTradeRecord = async (id) => {
   const response = await axios.delete(`${BASE_URL}/${id}`);
   return response.data;
 };
+
+/**
+ * 交易数据核对
+ * GET /api/trade-records/verify
+ */
+export const verifyTradeRecords = async () => {
+  const response = await axios.get(`${BASE_URL}/verify`);
+  return response.data;
+};

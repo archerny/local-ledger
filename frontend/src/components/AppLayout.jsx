@@ -11,6 +11,7 @@ import TradeRecords from '../pages/TradeRecords';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
 import StrategyManagement from '../pages/StrategyManagement';
+import TradeAnomalyAnalysis from '../pages/TradeAnomalyAnalysis';
 import { AmountVisibilityProvider, useAmountVisibility } from '../contexts/AmountVisibilityContext';
 import './AppLayout.css';
 
@@ -103,6 +104,8 @@ const AppLayout = () => {
         return <Settings />;
       case '7':
         return <StrategyManagement />;
+      case '8':
+        return <TradeAnomalyAnalysis />;
       default:
         return <Dashboard />;
     }

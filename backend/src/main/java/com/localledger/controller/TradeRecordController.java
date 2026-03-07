@@ -1,6 +1,7 @@
 package com.localledger.controller;
 
 import com.localledger.dto.TradeStatistics;
+import com.localledger.dto.TradeVerificationResult;
 import com.localledger.entity.TradeRecord;
 import com.localledger.entity.enums.AssetType;
 import com.localledger.service.TradeRecordService;
@@ -149,6 +150,19 @@ public class TradeRecordController {
         } catch (IllegalArgumentException e) {
             return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    /**
+     * 交易数据核对
+     * GET /api/trade-records/verify
+     * 对所有未删除的交易记录执行数据核对，返回核对结果
+     */
+    @GetMapping("/verify")
+    public ResponseEntity<Map<String, Object>> verifyTradeRecords() {
+        TradeVerificationResult result = tradeRecordService.verifyAll();
+        String message = result.isPassed() ? "核对通过，所有交易记录数据正常" :
+                "核对完成，发现 " + result.getErrorCount() + " 条异常记录";
+        return buildSuccessResponse(message, result);
     }
 
     // ============ 响应构建工具方法 ============
