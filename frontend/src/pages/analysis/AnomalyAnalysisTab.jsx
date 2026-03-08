@@ -18,6 +18,7 @@ const ruleColorMap = {
   '港股证券代码格式': 'orange',
   '期权到期/行权交易费用价格': 'red',
   '美股证券代码格式': 'blue',
+  '证券代码类别一致性': 'magenta',
 };
 
 /**
@@ -70,6 +71,7 @@ const AnomalyAnalysisTab = () => {
         { text: '港股证券代码格式', value: '港股证券代码格式' },
         { text: '期权到期/行权交易费用价格', value: '期权到期/行权交易费用价格' },
         { text: '美股证券代码格式', value: '美股证券代码格式' },
+        { text: '证券代码类别一致性', value: '证券代码类别一致性' },
       ],
       onFilter: (value, record) => record.ruleName === value,
       render: (ruleName) => {

@@ -15,9 +15,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 交易数据核对验证服务
@@ -59,6 +64,7 @@ public class TradeVerificationService {
      * 2. 港股证券代码格式核对（HKD 结算的交易）
      * 3. 期权到期/行权交易的费用和价格核对
      * 4. 美股证券代码格式核对（USD 结算的股票交易）
+     * 5. 证券代码类别一致性核对（同一 symbol 不应分属不同 assetType）
      */
     public TradeVerificationResult verifyAll() {
         List<TradeRecord> records = tradeRecordRepository.findByIsDeletedFalseOrderByIdDesc();
@@ -83,6 +89,9 @@ public class TradeVerificationService {
             // 规则4：美股证券代码格式核对
             verifyUsStockSymbolFormat(record, result);
         }
+
+        // 规则5：证券代码类别一致性核对（全局规则，需在循环外执行）
+        verifySymbolAssetTypeConsistency(records, result);
 
         result.setErrorCount(result.getErrors().size());
         return result;
@@ -314,6 +323,62 @@ public class TradeVerificationService {
             error.setExpectedFormat("纯字母（如 AAPL、TSLA、MSFT）");
             error.setUnderlyingSymbol(underlyingSymbol);
             error.setMessage(String.join("；", issues));
+            result.addError(error);
+        }
+    }
+
+    /**
+     * 规则5：核对证券代码类别一致性
+     *
+     * 同一个证券代码（symbol）在所有记录中只应对应唯一的一种资产类别（assetType）。
+     * 例如：
+     *   - 'QQQ' 不可能既是 STOCK 又是 ETF
+     *   - 某个期权代码不可能既是 OPTION_CALL 又是 OPTION_PUT
+     *
+     * 此规则为全局性规则，需要对所有记录进行交叉比较，
+     * 先按 symbol（忽略大小写）分组统计 assetType，再对存在冲突的记录逐条报出异常。
+     */
+    private void verifySymbolAssetTypeConsistency(List<TradeRecord> records, TradeVerificationResult result) {
+        // 按 symbol（忽略大小写）分组，收集每个 symbol 对应的所有 assetType
+        Map<String, Set<AssetType>> symbolAssetTypeMap = new HashMap<>();
+        for (TradeRecord record : records) {
+            String symbolKey = record.getSymbol().toUpperCase();
+            symbolAssetTypeMap.computeIfAbsent(symbolKey, k -> new HashSet<>())
+                    .add(record.getAssetType());
+        }
+
+        // 筛选出存在多种 assetType 的 symbol（即存在冲突的代码）
+        Set<String> conflictSymbols = symbolAssetTypeMap.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        if (conflictSymbols.isEmpty()) {
+            return; // 无冲突，跳过
+        }
+
+        // 对涉及冲突 symbol 的所有记录报出异常
+        for (TradeRecord record : records) {
+            String symbolKey = record.getSymbol().toUpperCase();
+            if (!conflictSymbols.contains(symbolKey)) {
+                continue;
+            }
+
+            Set<AssetType> conflictTypes = symbolAssetTypeMap.get(symbolKey);
+            String typesStr = conflictTypes.stream()
+                    .map(AssetType::name)
+                    .sorted()
+                    .collect(Collectors.joining("、"));
+
+            TradeVerificationResult.ErrorDetail error = new TradeVerificationResult.ErrorDetail();
+            error.setRecordId(record.getId());
+            error.setRuleName("证券代码类别一致性");
+            error.setAssetType(record.getAssetType().name());
+            error.setActualSymbol(record.getSymbol());
+            error.setExpectedFormat("同一证券代码应对应唯一的资产类别");
+            error.setUnderlyingSymbol(record.getUnderlyingSymbol());
+            error.setMessage("证券代码 '" + record.getSymbol() + "' 在不同记录中被归为多种资产类别：" +
+                    typesStr + "，当前记录类别为 " + record.getAssetType().name());
             result.addError(error);
         }
     }
