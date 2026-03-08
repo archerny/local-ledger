@@ -72,14 +72,40 @@
 | `MARKET_EVENT` | `SYMBOL_CHANGE` | 7 | 代码变更事件触发，关联 `events_symbol_change.id = 7` |
 | `MARKET_EVENT` | `DIVIDEND_IN_KIND` | 2 | 实物分红事件触发，关联 `events_dividend_in_kind.id = 2` |
 
-### 3.5 与现有设计的关系
+### 3.5 市场事件的交易类型映射
+
+**关键决策：市场事件不新增 TradeType 枚举值，统一复用 `BUY` / `SELL`。**
+
+| 市场事件 | 生成的交易记录 | TradeType | 说明 |
+|----------|----------------|-----------|------|
+| 拆股（如 1:4） | BUY 增量数量（如原100股→新400股，增量300股） | `BUY` | 价格=0，费用=0，金额=0 |
+| 代码变更（如 FB→META） | ① SELL 旧代码股票 | `SELL` | 价格=0，费用=0，金额=0 |
+|  | ② BUY 新代码股票 | `BUY` | 价格=0，费用=0，金额=0 |
+| 实物分红 | BUY 分红股票 | `BUY` | 价格=0，费用=0，金额=0 |
+
+**为什么不新增 TradeType：**
+
+| # | 理由 | 说明 |
+|---|------|------|
+| 1 | TradeType 描述的是「做了什么动作」 | 拆股/代码变更本身不是交易动作，它们的实际效果就是卖出+买入 |
+| 2 | 持仓计算无需特殊处理 | `BUY`/`SELL` 的 `calculateQuantityDelta()` 逻辑天然适用，不需要为每种事件做 case 分支 |
+| 3 | 避免枚举膨胀 | 未来新增市场事件类型时，不需要修改 TradeType 枚举和持仓计算逻辑 |
+| 4 | 「为什么发生」由 `trade_trigger` + `trigger_ref_type` 表达 | 两个维度职责清晰：TradeType 管动作，trade_trigger 管来源 |
+
+**注意事项：**
+
+- 市场事件生成的交易记录，价格、费用、金额均为 **0**，不影响收益统计
+- 区分市场事件交易和普通交易，通过 `trade_trigger = MARKET_EVENT` 筛选，而非 TradeType
+- 收益计算模块需排除 `trade_trigger = MARKET_EVENT` 且金额为 0 的记录，或在统计时按 `trade_trigger` 分组
+
+### 3.6 与现有设计的关系
 
 本设计与 [market-event-processing-design.md](market-event-processing-design.md) 中的方案互为补充：
 
 - 市场事件设计文档中定义的 `market_event_id` + `market_event_type` 字段，在本方案中被统一为更通用的 `trigger_ref_id` + `trigger_ref_type`，不仅覆盖市场事件场景，还支持期权行权等其他触发来源
 - `trade_trigger` 提供了交易来源的顶层分类维度，便于统一查询和操作
 
-### 3.6 应用层校验规则
+### 3.7 应用层校验规则
 
 | 规则 | 说明 |
 |------|------|

@@ -49,7 +49,7 @@
 |---------|--------------------------|---------------------------|
 | 核心思路 | 每次查持仓时将交易记录与市场事件混合排序遍历 | 事件写入时一次性生成交易记录，后续查持仓无额外开销 |
 | 持仓计算复杂度 | 高（多类型分支、混合排序） | 低（只处理交易记录，逻辑统一） |
-| 对现有代码影响 | 需大幅重构 `PositionService` | `PositionService` 几乎不用改，仅新增交易类型 |
+| 对现有代码影响 | 需大幅重构 `PositionService` | `PositionService` 完全不用改，复用 BUY/SELL 逻辑 |
 | 可审计性 | 差（事件影响是隐式计算结果） | 好（用户能看到系统生成的交易记录，清楚持仓变化原因） |
 
 **隐患与应对**：
@@ -140,11 +140,15 @@ flowchart TD
 
 ## 五、各事件类型生成的系统交易记录
 
-| 市场事件 | 生成的交易记录 | 示例 |
-|---------|-------------|------|
-| **拆股 1:3** | 对持有该 symbol 的每个券商，生成一条 `STOCK_SPLIT` 类型的 BUY 记录，数量 = 原持仓 × (ratioTo/ratioFrom - 1) | 持有100股，拆股1:3 → 生成 BUY 200股的记录 |
-| **代码变更** | 对持有 oldSymbol 的每个券商，生成两条记录：① oldSymbol SELL 全部持仓 ② newSymbol BUY 同等数量 | FB 100股 → SELL FB 100 + BUY META 100 |
-| **实物分红** | 对持有该 symbol 的每个券商，生成一条 dividendSymbol 的 BUY 记录，数量 = 持仓 × dividendQtyPerShare | 持有1000股A，每股分红0.5股B → 生成 BUY B 500股 |
+**关键决策：市场事件不新增 TradeType，统一复用 `BUY` / `SELL`。** 区分来源通过 `trade_trigger = MARKET_EVENT` + `trigger_ref_type` 实现，详见 [trade-trigger-design.md](trade-trigger-design.md)。
+
+| 市场事件 | 生成的交易记录 | TradeType | 示例 |
+|---------|-------------|-----------|------|
+| **拆股 1:3** | 对持有该 symbol 的每个券商，生成一条 BUY 记录，数量 = 原持仓 × (ratioTo/ratioFrom - 1) | `BUY` | 持有100股，拆股1:3 → 生成 BUY 200股（价格=0，金额=0） |
+| **代码变更** | 对持有 oldSymbol 的每个券商，生成两条记录：① SELL oldSymbol 全部持仓 ② BUY newSymbol 同等数量 | `SELL` + `BUY` | FB 100股 → SELL FB 100 + BUY META 100（价格=0，金额=0） |
+| **实物分红** | 对持有该 symbol 的每个券商，生成一条 dividendSymbol 的 BUY 记录，数量 = 持仓 × dividendQtyPerShare | `BUY` | 持有1000股A，每股分红0.5股B → BUY B 500股（价格=0，金额=0） |
+
+> 所有市场事件生成的交易记录，价格、费用、金额均为 **0**，不影响收益统计。
 
 ### 5.1 拆股事件详细逻辑
 
@@ -159,11 +163,9 @@ flowchart TD
    - 生成一条系统交易记录：
      * tradeDate = eventDate
      * symbol = event.symbol
-     * tradeType = STOCK_SPLIT
+     * tradeType = BUY
      * quantity = 增量（取整，使用 Math.round()）
-     * price = 0
-     * amount = 0
-     * fee = 0
+     * price = 0, amount = 0, fee = 0
      * brokerId = 持仓的 brokerId
      * trade_trigger = MARKET_EVENT
      * trigger_ref_id = event.id
@@ -183,14 +185,14 @@ flowchart TD
    a) SELL oldSymbol：
      * tradeDate = eventDate
      * symbol = oldSymbol
-     * tradeType = SYMBOL_CHANGE
-     * quantity = 原持仓数量（SELL 方向）
+     * tradeType = SELL
+     * quantity = 原持仓数量
      * price = 0, amount = 0, fee = 0
    b) BUY newSymbol：
      * tradeDate = eventDate
      * symbol = newSymbol
-     * tradeType = SYMBOL_CHANGE
-     * quantity = 原持仓数量（BUY 方向）
+     * tradeType = BUY
+     * quantity = 原持仓数量
      * price = 0, amount = 0, fee = 0
    * 两条记录均设置：
      * trade_trigger = MARKET_EVENT
@@ -210,7 +212,7 @@ flowchart TD
    - 生成一条系统交易记录：
      * tradeDate = eventDate
      * symbol = dividendSymbol
-     * tradeType = DIVIDEND_IN_KIND
+     * tradeType = BUY
      * quantity = 分红数量
      * price = 0, amount = 0, fee = 0
      * brokerId = 持仓的 brokerId
@@ -223,25 +225,25 @@ flowchart TD
 
 ## 六、数据模型变更
 
-### 6.1 TradeType 枚举扩展
+### 6.1 TradeType 枚举：无需修改
 
-在 `TradeType` 枚举中新增三种类型：
+**市场事件不新增 TradeType 枚举值**，统一复用现有的 `BUY` / `SELL`。
 
+理由：
+- TradeType 描述的是「做了什么动作」，拆股/代码变更/实物分红的实际效果就是买入和卖出
+- 复用 `BUY`/`SELL` 后，`PositionService.calculateQuantityDelta()` 无需修改
+- 「为什么发生」由 `trade_trigger` + `trigger_ref_type` 表达，职责分离更清晰
+
+现有枚举保持不变：
 ```java
 public enum TradeType {
     BUY,            // 买入
     SELL,           // 卖出
     OPTION_EXPIRE,  // 期权到期
     EXERCISE_BUY,   // 行权买股
-    EXERCISE_SELL,  // 行权卖股
-    // ↓ 新增：市场事件生成的系统交易类型
-    STOCK_SPLIT,      // 拆股调整
-    SYMBOL_CHANGE,    // 代码变更
-    DIVIDEND_IN_KIND  // 实物分红
+    EXERCISE_SELL   // 行权卖股
 }
 ```
-
-> 注意：数据库的 `trade_type_enum` 也需要同步添加这三个值。
 
 ### 6.2 TradeRecord 表扩展
 
@@ -288,15 +290,14 @@ public enum TradeType {
 
 ## 八、PositionService 的影响
 
-由于市场事件的影响已经被转化为系统交易记录，`PositionService.calculatePositions()` 方法**几乎不需要修改**。
+由于市场事件统一复用 `BUY` / `SELL` 作为 TradeType，`PositionService` **完全不需要修改**。
 
-唯一需要确认的是：在 `calculateQuantityDelta()` 方法中，新增的三种交易类型需要被正确处理：
+- `calculateQuantityDelta()` 方法现有的 `BUY`（+quantity）和 `SELL`（-quantity）逻辑天然适用
+- 拆股生成的 BUY 记录，quantity 为增量，直接加到持仓上
+- 代码变更生成的 SELL 旧代码 + BUY 新代码，持仓自动正确更新
+- 实物分红生成的 BUY 记录，quantity 为分红获得的股数，直接加到持仓上
 
-- `STOCK_SPLIT`：quantity 直接作为增量加到持仓上（已经是计算好的增量）
-- `SYMBOL_CHANGE`：作为 BUY/SELL 处理（生成的记录中已经包含了方向信息）
-- `DIVIDEND_IN_KIND`：quantity 直接作为增量（买入分红证券）
-
-实际上，由于生成的系统交易记录的 `tradeType` 就是 `STOCK_SPLIT`、`SYMBOL_CHANGE`、`DIVIDEND_IN_KIND`，需要在 `calculateQuantityDelta()` 中添加对这三种类型的处理逻辑。
+这是选择「复用 BUY/SELL」而非「新增 TradeType」的核心优势。
 
 ---
 
@@ -304,7 +305,7 @@ public enum TradeType {
 
 **前端无需修改持仓快照功能**。市场事件的处理完全在后端完成，`GET /api/positions` 的接口入参和出参保持不变。
 
-在交易记录列表中，系统生成的记录（tradeType 为 `STOCK_SPLIT` / `SYMBOL_CHANGE` / `DIVIDEND_IN_KIND`）可以通过前端进行特殊标记展示（如添加"系统生成"标签），方便用户识别。
+在交易记录列表中，系统生成的记录通过 `trade_trigger = MARKET_EVENT` 识别（而非 TradeType），前端可据此添加「系统生成」标签，方便用户区分手动交易和系统交易。
 
 ---
 
