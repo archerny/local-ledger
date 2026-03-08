@@ -69,14 +69,14 @@
 ```mermaid
 flowchart TD
     A["用户 新增/修改/删除 市场事件 E"] --> B["1. 确定受影响的标的证券 symbols"]
-    B --> C["2. 找出这些 symbols 在 E.eventDate 当天及之后<br>的所有市场事件（含 E 本身）<br>按 eventDate 升序排列"]
+    B --> C["2. 找出这些 symbols 在 E.eventDate 当天及之后<br>的所有市场事件（含 E 本身）<br>按 eventDate 升序排列<br>同一天内按固定优先级排序：<br>代码变更 > 拆股 > 实物分红"]
     C --> D["3. 通过 trigger_ref_id + trigger_ref_type<br>删除这些事件各自关联的所有系统交易记录"]
     D --> E{操作类型?}
     
     E -->|删除事件| F["4. 删除事件 E 本身"]
     E -->|新增/修改| G["4. 保存/更新事件 E"]
     
-    G --> H["5. 按时间顺序，逐个重新处理每个事件：<br>① 计算该事件前一天的持仓快照<br>② 根据事件类型生成系统交易记录<br>（设置 trade_trigger=MARKET_EVENT，<br>trigger_ref_id=事件ID，trigger_ref_type=事件类型）<br>③ 插入交易记录<br>④ 将事件 processed 置为 true"]
+    G --> H["5. 按排序后的顺序，逐个重新处理每个事件：<br>（同一天内固定顺序：代码变更 > 拆股 > 实物分红）<br>① 计算该事件前一天的持仓快照<br>② 根据事件类型生成系统交易记录<br>（设置 trade_trigger=MARKET_EVENT，<br>trigger_ref_id=事件ID，trigger_ref_type=事件类型）<br>③ 插入交易记录<br>④ 将事件 processed 置为 true"]
     
     F --> I["6. 对剩余事件，按时间顺序重新处理<br>（同步骤5）"]
     
@@ -182,7 +182,7 @@ flowchart TD
 输入：SymbolChangeEvent (symbol, eventDate, oldSymbol, newSymbol)
 
 1. 计算 eventDate 前一天的持仓快照
-2. 从持仓快照中筛选出持有 oldSymbol 的所有 (brokerId, quantity) 记录
+2. 从持仓快照中筛选出持有 oldSymbol 的所有 (brokerId, quantity) 记录（**排除期权类型**，期权有到期日，到期后自然失效，无需处理代码变更）
 3. 对每个持仓记录：
    - 计算该券商下 oldSymbol 的平均持仓成本 avgCost = 总成本 / 持仓数量
    - 总成本 totalCost = avgCost × 持仓数量
@@ -190,12 +190,14 @@ flowchart TD
    a) SELL oldSymbol：
      * tradeDate = eventDate
      * symbol = oldSymbol
+     * underlyingSymbol = oldSymbol
      * tradeType = SELL
      * quantity = 原持仓数量
      * price = avgCost, amount = totalCost, fee = 0
    b) BUY newSymbol：
      * tradeDate = eventDate
      * symbol = newSymbol
+     * underlyingSymbol = newSymbol
      * tradeType = BUY
      * quantity = 原持仓数量
      * price = avgCost, amount = totalCost, fee = 0
@@ -321,13 +323,14 @@ public enum TradeType {
 |------|---------|
 | 同一 symbol 多次拆股 | 级联重算机制保证按时间顺序依次处理，每次基于前一天的正确持仓 |
 | 代码变更链（A→B→C） | 依次处理，A→B 后 A 的持仓归入 B，后续 B→C 时 B（含原 A）都归入 C |
-| 拆股+代码变更同一天 | 按事件 ID 或时间戳排序确定先后顺序 |
+| 同一天发生多个不同类型的市场事件 | 按固定优先级排序处理：**代码变更 > 拆股 > 实物分红**。理由：① 代码变更只改 symbol 不改数量/成本，先执行不影响后续计算；② 拆股改变数量，影响实物分红的分红数量计算基础（分红数量 = 持仓数量 × dividendQtyPerShare），必须在实物分红之前；③ 实物分红依赖正确的持仓数量，放最后确保数量正确。若用户录入顺序与此不符，级联重算时系统会自动按固定优先级重新排序处理 |
 | 分红数量为小数 | 向下取整（`Math.floor`），与券商碎股处理行为一致 |
 | 拆股导致的碎股 | 使用 `Math.round()` 取整 |
 | 没有录入市场事件 | 回退到现有行为，不影响基础交易持仓计算 |
 | 事件处理时无持仓 | `processed` 标记为 true，但不生成系统交易记录（"处理过了，但无影响"） |
 | 事务中途失败 | 整个操作回滚，`processed` 状态恢复一致 |
 | 删除市场事件后有后续事件 | 删除后仍需级联重算后续事件（基础持仓变了） |
+| 代码变更时持有该标的的期权 | 不处理。期权有到期日，到期后自然失效，无需跟随标的证券做代码变更 |
 
 ---
 
