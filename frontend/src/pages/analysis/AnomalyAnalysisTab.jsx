@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
-  Card, Table, Tag, Button, message, Statistic, Space, Result, Spin, Typography, Tooltip,
+  Card, Table, Tag, Button, message, Statistic, Space, Result, Spin, Typography, Tooltip, Collapse,
 } from 'antd';
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   ReloadOutlined,
   FileSearchOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { verifyTradeRecords } from '../../services/tradeRecordApi';
 
@@ -158,6 +159,83 @@ const AnomalyAnalysisTab = () => {
           </Button>
         </div>
       </Card>
+
+      {/* 检测规则说明 */}
+      <Collapse
+        ghost
+        style={{ marginBottom: 16 }}
+        items={[
+          {
+            key: 'rules',
+            label: (
+              <span style={{ fontSize: 13, color: '#595959' }}>
+                <InfoCircleOutlined style={{ marginRight: 6 }} />
+                查看当前检测规则说明
+              </span>
+            ),
+            children: (
+              <div style={{ padding: '4px 8px', fontSize: 13, lineHeight: 2 }}>
+                <p style={{ marginBottom: 12 }}>
+                  系统将依据以下 <Text strong>5 项规则</Text> 对所有交易记录逐一进行校验，任何不符合规则的记录均会被标记为异常：
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #f0f0f0', textAlign: 'left' }}>
+                      <th style={{ padding: '8px 12px', width: 60, color: '#8c8c8c', fontWeight: 'normal' }}>序号</th>
+                      <th style={{ padding: '8px 12px', width: 200, color: '#8c8c8c', fontWeight: 'normal' }}>规则名称</th>
+                      <th style={{ padding: '8px 12px', color: '#8c8c8c', fontWeight: 'normal' }}>规则说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px 12px' }}>1</td>
+                      <td style={{ padding: '10px 12px' }}><Tag color="purple">期权证券代码格式</Tag></td>
+                      <td style={{ padding: '10px 12px' }}>
+                        当资产类别为 OPTION_CALL 或 OPTION_PUT 时，校验证券代码是否符合标准期权命名格式
+                        <Text code>底层代码-YYYYMMDD-C/P行权价</Text>，
+                        并核对底层证券代码一致性、日期合法性、期权类型标识匹配及行权价格有效性。
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px 12px' }}>2</td>
+                      <td style={{ padding: '10px 12px' }}><Tag color="orange">港股证券代码格式</Tag></td>
+                      <td style={{ padding: '10px 12px' }}>
+                        当结算币种为 HKD（港币）时，校验证券代码及底层证券代码是否为纯数字格式（如 <Text code>00700</Text>、<Text code>09988</Text>）。
+                        期权类型的港股记录不在此规则校验范围内。
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px 12px' }}>3</td>
+                      <td style={{ padding: '10px 12px' }}><Tag color="red">期权到期/行权交易费用价格</Tag></td>
+                      <td style={{ padding: '10px 12px' }}>
+                        当交易类型为 OPTION_EXPIRE（期权到期）、EXERCISE_BUY（行权买入）或 EXERCISE_SELL（行权卖出）时，
+                        校验交易费用与成交价格是否均为 0。此类交易不应产生额外费用或成交价格。
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px 12px' }}>4</td>
+                      <td style={{ padding: '10px 12px' }}><Tag color="blue">美股证券代码格式</Tag></td>
+                      <td style={{ padding: '10px 12px' }}>
+                        当资产类别为 STOCK（股票）且结算币种为 USD（美元）时，校验证券代码及底层证券代码是否为纯字母格式
+                        （如 <Text code>AAPL</Text>、<Text code>TSLA</Text>）。
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '10px 12px' }}>5</td>
+                      <td style={{ padding: '10px 12px' }}><Tag color="magenta">证券代码类别一致性</Tag></td>
+                      <td style={{ padding: '10px 12px' }}>
+                        校验同一证券代码在所有记录中是否始终对应唯一的资产类别。
+                        同一代码不应同时归属于不同类别（如同一代码既被记录为 STOCK 又被记录为 ETF），
+                        出现此类冲突表明部分记录的资产类别存在错误。
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ),
+          },
+        ]}
+      />
 
       {/* 未核对状态 */}
       {!hasChecked && !loading && (
