@@ -248,6 +248,22 @@ public class TradeRecordService {
     }
 
     /**
+     * 根据证券类型自动计算成交金额
+     * 期权（OPTION_CALL / OPTION_PUT）一个合约对应100股正股，金额 = 数量 × 价格 × 100
+     * 其他类型（股票、ETF等），金额 = 数量 × 价格
+     */
+    private void recalculateAmount(TradeRecord record) {
+        if (record.getQuantity() != null && record.getPrice() != null) {
+            BigDecimal qty = BigDecimal.valueOf(record.getQuantity());
+            BigDecimal amount = qty.multiply(record.getPrice());
+            if (record.getAssetType() == AssetType.OPTION_CALL || record.getAssetType() == AssetType.OPTION_PUT) {
+                amount = amount.multiply(BigDecimal.valueOf(100));
+            }
+            record.setAmount(amount);
+        }
+    }
+
+    /**
      * 软删除交易记录
      */
     @Transactional
