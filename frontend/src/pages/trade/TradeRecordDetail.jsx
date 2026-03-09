@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Tag, Button, Spin, message, Empty } from 'antd';
+import { Card, Descriptions, Tag, Button, Spin, message, Empty, Table } from 'antd';
 import { usePageHeader } from '../../contexts/PageHeaderContext';
 import { PageHeaderTitle } from '../../components/PageHeader';
 import { useAmountVisibility } from '../../contexts/AmountVisibilityContext';
-import { fetchAllTradeRecords } from '../../services/tradeRecordApi';
+import { fetchAllTradeRecords, fetchTradeRecordById } from '../../services/tradeRecordApi';
 import { fetchActiveBrokers } from '../../services/brokerApi';
 import { fetchAllStrategies } from '../../services/strategyApi';
 import {
   assetTypeMap, tradeTypeMap, tradeTypeColorMap, assetTypeColorMap,
   tradeTriggerMap, tradeTriggerColorMap, triggerRefTypeMap,
+  amountColorMap,
 } from '../../constants/tradeConstants';
+import getTradeColumns from './TradeColumns';
+
+/* 统一 Descriptions 表格列宽的样式 */
+const descriptionsTableStyle = `
+  .aligned-descriptions .ant-descriptions-view {
+    table-layout: fixed;
+  }
+  .aligned-descriptions .ant-descriptions-view th.ant-descriptions-item-label {
+    width: 12%;
+  }
+  .aligned-descriptions .ant-descriptions-view td.ant-descriptions-item-content {
+    width: 21.33%;
+  }
+`;
 
 /**
  * 交易记录详情独立页面
@@ -23,6 +38,7 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [brokerMap, setBrokerMap] = useState({});
   const [strategyMap, setStrategyMap] = useState({});
+  const [relatedRecords, setRelatedRecords] = useState([]);
 
   // 面包屑配置
   const breadcrumbs = [
@@ -52,6 +68,48 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
     loadData();
   }, [recordId]);
 
+  /**
+   * 根据当前交易记录，从所有记录中计算关联交易
+   * 1. 期权交易(OPTION_CALL/OPTION_PUT)：查找同一 symbol 的所有交易
+   * 2. 股票交易(STOCK) + 触发来源为期权(OPTION)：
+   *    先通过 triggerRefId 向后端获取触发源期权交易记录，
+   *    再根据该期权的 symbol 从全量数据中查找所有同 symbol 的交易记录
+   */
+  const computeRelatedRecords = async (currentRecord, allRecords) => {
+    if (!currentRecord || !allRecords || allRecords.length === 0) return [];
+
+    const { id, assetType, symbol, tradeTrigger, triggerRefId } = currentRecord;
+
+    // 场景1：期权交易 → 查找同一证券代码(symbol)的所有交易
+    if (assetType === 'OPTION_CALL' || assetType === 'OPTION_PUT') {
+      if (!symbol) return [];
+      return allRecords.filter(
+        (r) => r.symbol === symbol
+      );
+    }
+
+    // 场景2：股票交易 + 触发来源为期权 → 先找到触发源期权，再找同 symbol 的全部交易
+    if (assetType === 'STOCK' && tradeTrigger === 'OPTION' && triggerRefId && triggerRefId !== 0) {
+      try {
+        // 通过 triggerRefId 向后端获取触发源期权交易记录
+        const refResult = await fetchTradeRecordById(triggerRefId);
+        if (refResult.status === 'SUCCESS' && refResult.data) {
+          const optionSymbol = refResult.data.symbol;
+          // 根据期权 symbol 从全量数据中查找所有同 symbol 的交易记录
+          if (optionSymbol) {
+            return allRecords.filter((r) => r.symbol === optionSymbol);
+          }
+        }
+      } catch (error) {
+        console.error('获取触发源期权交易失败:', error);
+      }
+      // 降级：如果请求失败，仍按原逻辑只展示 triggerRefId 对应的记录
+      return allRecords.filter((r) => r.id === triggerRefId);
+    }
+
+    return [];
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -74,9 +132,14 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
       }
 
       if (recordsResult.status === 'SUCCESS') {
-        const found = (recordsResult.data || []).find((item) => String(item.id) === String(recordId));
+        const allRecords = recordsResult.data || [];
+        const found = allRecords.find((item) => String(item.id) === String(recordId));
         setRecord(found || null);
-        if (!found) {
+        if (found) {
+          const related = await computeRelatedRecords(found, allRecords);
+          setRelatedRecords(related);
+        } else {
+          setRelatedRecords([]);
           message.warning('未找到该交易记录');
         }
       } else {
@@ -108,8 +171,17 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
     );
   }
 
+  // 查看关联交易详情 - 跳转到对应的详情页
+  const handleViewRelatedDetail = (relatedRecord) => {
+    window.location.hash = `#/trade-detail/${relatedRecord.id}`;
+  };
+
+  // 关联交易表格列（复用 TradeColumns）
+  const relatedColumns = getTradeColumns(amountVisible, brokerMap, strategyMap, handleViewRelatedDetail);
+
   return (
     <Card>
+      <style>{descriptionsTableStyle}</style>
       {/* 标题栏：返回箭头 + 标题 + 标签（在白色内容卡片内部渲染） */}
       <PageHeaderTitle
         title="交易记录详情"
@@ -123,6 +195,7 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
         bordered
         column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
         size="middle"
+        className="aligned-descriptions"
         style={{ marginBottom: 24 }}
       >
         <Descriptions.Item label="记录ID">{record.id}</Descriptions.Item>
@@ -156,6 +229,7 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
         bordered
         column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
         size="middle"
+        className="aligned-descriptions"
         style={{ marginBottom: 24 }}
       >
         <Descriptions.Item label="数量">
@@ -182,6 +256,8 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
         bordered
         column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
         size="middle"
+        className="aligned-descriptions"
+        style={{ marginBottom: relatedRecords.length > 0 ? 24 : 0 }}
       >
         <Descriptions.Item label="所属策略">
           {record.strategyId ? (strategyMap[record.strategyId] || `ID:${record.strategyId}`) : '-'}
@@ -198,6 +274,28 @@ const TradeRecordDetail = ({ recordId, onBack }) => {
           {record.triggerRefId && record.triggerRefId !== 0 ? record.triggerRefId : '-'}
         </Descriptions.Item>
       </Descriptions>
+
+      {/* 相关交易 - 仅在有关联交易时显示 */}
+      {relatedRecords.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: 16, fontWeight: 500, marginBottom: 16 }}>
+            相关交易
+            <span style={{ fontSize: 13, color: '#999', fontWeight: 'normal', marginLeft: 8 }}>
+              {(record.assetType === 'OPTION_CALL' || record.assetType === 'OPTION_PUT')
+                ? `证券代码 ${record.symbol} 的全部交易记录`
+              : `触发本交易的期权（${relatedRecords.length > 0 ? relatedRecords[0].symbol : ''}）全部交易记录`
+              }
+            </span>
+          </h4>
+          <Table
+            columns={relatedColumns}
+            dataSource={relatedRecords}
+            rowKey="id"
+            size="middle"
+            pagination={relatedRecords.length > 10 ? { pageSize: 10 } : false}
+          />
+        </div>
+      )}
     </Card>
   );
 };
