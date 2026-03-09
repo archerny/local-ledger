@@ -10,7 +10,7 @@
 当前 `PositionService` 已实现了基于交易记录的基础持仓计算，支持：
 
 - 按 `(symbol, brokerId)` 维度聚合
-- 处理 `BUY` / `SELL` / `OPTION_EXPIRE` / `EXERCISE_BUY` / `EXERCISE_SELL` 五种交易类型
+- 处理 `BUY` / `SELL` 两种交易类型（期权相关交易类型已精简，详见 [trade-type-refactor-discussion.md](trade-type-refactor-discussion.md)）
 - 行权交易对正股的影响
 
 **缺少的部分**：未考虑三类市场事件对持仓的影响。
@@ -233,25 +233,24 @@ flowchart TD
 
 ## 六、数据模型变更
 
-### 6.1 TradeType 枚举：无需修改
+### 6.1 TradeType 枚举：需精简
 
-**市场事件不新增 TradeType 枚举值**，统一复用现有的 `BUY` / `SELL`。
+**TradeType 统一精简为 `BUY` / `SELL` 两个值**，市场事件和期权场景均复用这两个值。
 
-理由：
-- TradeType 描述的是「做了什么动作」，拆股/代码变更/实物分红的实际效果就是买入和卖出
-- 复用 `BUY`/`SELL` 后，`PositionService.calculateQuantityDelta()` 无需修改
-- 「为什么发生」由 `trade_trigger` + `trigger_ref_type` 表达，职责分离更清晰
-
-现有枚举保持不变：
+精简后的枚举：
 ```java
 public enum TradeType {
-    BUY,            // 买入
-    SELL,           // 卖出
-    OPTION_EXPIRE,  // 期权到期
-    EXERCISE_BUY,   // 行权买股
-    EXERCISE_SELL   // 行权卖股
+    BUY,   // 买入
+    SELL   // 卖出
 }
 ```
+
+原有的 `OPTION_EXPIRE`、`EXERCISE_BUY`、`EXERCISE_SELL` 三个枚举值被移除，其语义改由 `trade_trigger` + `trigger_ref_type` 表达。详见 [trade-type-refactor-discussion.md](trade-type-refactor-discussion.md)。
+
+理由：
+- TradeType 只描述「做了什么动作」，期权到期/行权/被指派的「为什么发生」由 `trade_trigger` + `trigger_ref_type` 表达
+- 精简后 `PositionService.calculateQuantityDelta()` 只需 2 个 case 分支，逻辑更简洁
+- 市场事件和期权场景采用统一标准，不再存在两套体系
 
 ### 6.2 TradeRecord 表扩展
 
@@ -259,9 +258,9 @@ public enum TradeType {
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
-| `trade_trigger` | VARCHAR(32) | `NOT NULL`，无默认值 | 交易触发来源：`MANUAL` / `OPTION_EXERCISE` / `MARKET_EVENT` |
+| `trade_trigger` | VARCHAR(32) | `NOT NULL`，无默认值 | 交易触发来源：`MANUAL` / `OPTION` / `MARKET_EVENT`，详见 [trade-trigger-design.md](trade-trigger-design.md) |
 | `trigger_ref_id` | BIGINT | `NOT NULL DEFAULT 0` | 触发来源的关联记录 ID，`0` 表示无关联 |
-| `trigger_ref_type` | VARCHAR(32) | 可空 | 触发来源的关联记录类型，区分 `trigger_ref_id` 指向哪张表 |
+| `trigger_ref_type` | VARCHAR(32) | `NOT NULL DEFAULT 'NONE'` | 触发来源的关联记录类型，区分 `trigger_ref_id` 指向哪张表；`NONE` 表示无关联。详见 [trade-trigger-design.md](trade-trigger-design.md) |
 
 市场事件场景下的用法：
 - `trade_trigger` = `MARKET_EVENT`

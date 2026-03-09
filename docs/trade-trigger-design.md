@@ -10,10 +10,10 @@
 当前 `trade_records` 表中的所有交易记录，均由用户人工录入，但实际上不同记录的产生原因各不相同：
 
 1. **手动交易** — 用户主动在券商下单执行的买卖
-2. **期权行权** — 期权到期行权导致的被动买入或卖出
+2. **期权事件** — 期权到期作废、行权、被指派等导致的被动买入或卖出
 3. **市场事件** — 拆股、代码变更、实物分红等市场事件由系统自动生成的交易记录
 
-现有的 `trade_type` 字段描述的是「交易做了什么动作」（买入/卖出/行权等），而非「这笔交易为什么会发生」。虽然可以通过 `trade_type` 间接推断来源，但这种隐式推断不够可靠，随着业务发展映射关系可能变得模糊。
+现有的 `trade_type` 字段描述的是「交易做了什么动作」（买入/卖出），而非「这笔交易为什么会发生」。虽然可以通过其他字段间接推断来源，但这种隐式推断不够可靠，随着业务发展映射关系可能变得模糊。
 
 **因此，需要新增专门的字段来显式标记交易记录的触发来源。**
 
@@ -60,16 +60,23 @@
 | `STOCK_SPLIT` | 拆股事件 | `events_stock_split` |
 | `SYMBOL_CHANGE` | 代码变更事件 | `events_symbol_change` |
 | `DIVIDEND_IN_KIND` | 实物分红事件 | `events_dividend_in_kind` |
-| `OPTION` | 期权记录 | 期权相关记录表（待定） |
+| `OPTION_EXPIRE` | 期权到期作废 | `trade_records`（期权交易记录） |
+| `OPTION_EXERCISE` | 行权（含主动行权和到期自动行权，不区分） | `trade_records`（期权交易记录） |
+| `OPTION_ASSIGNED` | 被指派 | `trade_records`（期权交易记录） |
 
 > 当 `trade_trigger = MANUAL` 时，`trigger_ref_type` 为 `NONE`，`trigger_ref_id` 为 0。
+> 当 `trade_trigger = OPTION` 时，期权侧记录（触发源头）`trigger_ref_id` 为 0；股票侧记录 `trigger_ref_id` 指向期权侧交易记录 ID。
 
 ### 3.4 字段组合语义
 
 | `trade_trigger` | `trigger_ref_type` | `trigger_ref_id` | 含义 |
 |-----------------|--------------------|--------------------|------|
 | `MANUAL` | `NONE` | 0 | 手动交易，无关联记录 |
-| `OPTION` | `OPTION` | 期权记录 ID | 期权相关事件，关联到具体的期权记录 |
+| `OPTION` | `OPTION_EXPIRE` | 0 | 期权到期作废，期权侧持仓清零（触发源头，无关联记录） |
+| `OPTION` | `OPTION_EXERCISE` | 0 | 行权 — 期权侧持仓清零（触发源头，无关联记录） |
+| `OPTION` | `OPTION_EXERCISE` | 期权侧交易记录 ID | 行权 — 股票侧买入/卖出，关联到期权侧交易记录 |
+| `OPTION` | `OPTION_ASSIGNED` | 0 | 被指派 — 期权侧持仓清零（触发源头，无关联记录） |
+| `OPTION` | `OPTION_ASSIGNED` | 期权侧交易记录 ID | 被指派 — 股票侧被动买入/卖出，关联到期权侧交易记录 |
 | `MARKET_EVENT` | `STOCK_SPLIT` | 3 | 拆股事件触发，关联 `events_stock_split.id = 3` |
 | `MARKET_EVENT` | `SYMBOL_CHANGE` | 7 | 代码变更事件触发，关联 `events_symbol_change.id = 7` |
 | `MARKET_EVENT` | `DIVIDEND_IN_KIND` | 2 | 实物分红事件触发，关联 `events_dividend_in_kind.id = 2` |
@@ -117,6 +124,11 @@
 | `MARKET_EVENT` 时 `trigger_ref_id` 不应为 0 | 市场事件生成的交易记录必须关联到具体的事件 |
 | `MARKET_EVENT` 时 `trigger_ref_type` 不应为 `NONE` | 必须指明关联的是哪种市场事件表 |
 | `MANUAL` 时 `trigger_ref_id` 应为 0 且 `trigger_ref_type` 应为 `NONE` | 手动交易无关联记录 |
+| `OPTION` 时 `trigger_ref_type` 应为 `OPTION_EXPIRE` / `OPTION_EXERCISE` / `OPTION_ASSIGNED` 三者之一 | 必须指明具体的期权子场景 |
+| `OPTION` + `OPTION_EXPIRE` 时，`price` 和 `amount` 应为 0 | 到期作废没有成交金额 |
+| `OPTION` + `OPTION_EXPIRE` 时，不应有关联的股票侧交易记录 | 到期作废不涉及股票交易 |
+| `OPTION` 期权侧记录的 `trigger_ref_id` 应为 0 | 期权侧是触发源头，不关联其他记录 |
+| `OPTION` 股票侧记录的 `trigger_ref_id` 不应为 0 | 股票侧必须关联到对应的期权侧交易记录 |
 
 ---
 
