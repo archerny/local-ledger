@@ -10,6 +10,9 @@ import {
   BulbOutlined,
   AuditOutlined,
   AlertOutlined,
+  StockOutlined,
+  ExperimentOutlined,
+  FundOutlined,
 } from '@ant-design/icons';
 
 // 菜单 key 与 URL hash 路径的映射
@@ -21,7 +24,9 @@ export const menuKeyToPath = {
   '7': 'strategy',
   '8': 'anomaly',
   '9': 'market-events',
-  '4': 'profit',
+  '4-1': 'profit-stock',
+  '4-2': 'profit-strategy',
+  '4-3': 'profit-account',
   '5': 'settings',
 };
 
@@ -38,6 +43,9 @@ export const menuKeyToParent = {
   '7': 'trade',
   '8': 'trade',
   '9': 'trade',
+  '4-1': 'profit',
+  '4-2': 'profit',
+  '4-3': 'profit',
 };
 
 // 菜单项配置
@@ -46,23 +54,6 @@ export const menuItems = [
     key: '1',
     icon: React.createElement(DashboardOutlined),
     label: '仪表盘',
-  },
-  {
-    key: 'account',
-    icon: React.createElement(WalletOutlined),
-    label: '账户管理',
-    children: [
-      {
-        key: '2',
-        icon: React.createElement(DollarOutlined),
-        label: '出入金记录',
-      },
-      {
-        key: '6',
-        icon: React.createElement(BankOutlined),
-        label: '券商管理',
-      },
-    ],
   },
   {
     key: 'trade',
@@ -92,9 +83,43 @@ export const menuItems = [
     ],
   },
   {
-    key: '4',
+    key: 'profit',
     icon: React.createElement(LineChartOutlined),
     label: '盈亏分析',
+    children: [
+      {
+        key: '4-1',
+        icon: React.createElement(StockOutlined),
+        label: '个股盈亏分析',
+      },
+      {
+        key: '4-2',
+        icon: React.createElement(ExperimentOutlined),
+        label: '策略盈亏分析',
+      },
+      {
+        key: '4-3',
+        icon: React.createElement(FundOutlined),
+        label: '账户盈亏分析',
+      },
+    ],
+  },
+  {
+    key: 'account',
+    icon: React.createElement(WalletOutlined),
+    label: '账户管理',
+    children: [
+      {
+        key: '2',
+        icon: React.createElement(DollarOutlined),
+        label: '出入金记录',
+      },
+      {
+        key: '6',
+        icon: React.createElement(BankOutlined),
+        label: '券商管理',
+      },
+    ],
   },
   {
     key: '5',

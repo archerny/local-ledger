@@ -9,7 +9,9 @@ import CashFlow from '../pages/CashFlow';
 import BrokerManagement from '../pages/BrokerManagement';
 import TradeRecords from '../pages/trade/TradeRecords';
 import TradeRecordDetail from '../pages/trade/TradeRecordDetail';
-import ProfitAnalysis from '../pages/ProfitAnalysis';
+import StockProfitAnalysis from '../pages/profit/StockProfitAnalysis';
+import StrategyProfitAnalysis from '../pages/profit/StrategyProfitAnalysis';
+import AccountProfitAnalysis from '../pages/profit/AccountProfitAnalysis';
 import Settings from '../pages/Settings';
 import StrategyManagement from '../pages/StrategyManagement';
 import TradeAnomalyAnalysis from '../pages/analysis/TradeAnomalyAnalysis';
@@ -120,8 +122,12 @@ const AppLayout = () => {
         return <BrokerManagement />;
       case '3':
         return <TradeRecords />;
-      case '4':
-        return <ProfitAnalysis />;
+      case '4-1':
+        return <StockProfitAnalysis />;
+      case '4-2':
+        return <StrategyProfitAnalysis />;
+      case '4-3':
+        return <AccountProfitAnalysis />;
       case '5':
         return <Settings />;
       case '7':
