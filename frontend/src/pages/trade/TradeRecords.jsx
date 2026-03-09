@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col, Descriptions } from 'antd';
+import { Card, Table, Button, message, Modal, Form, Input, DatePicker, Select, InputNumber, Row, Col } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAmountVisibility } from '../../contexts/AmountVisibilityContext';
 import { fetchAllTradeRecords, createTradeRecord, fetchTradeStatistics } from '../../services/tradeRecordApi';
 import { fetchActiveBrokers } from '../../services/brokerApi';
 import { fetchAllStrategies } from '../../services/strategyApi';
-import { assetTypeMap, tradeTypeMap, tradeTypeColorMap, assetTypeColorMap, tradeTriggerMap, tradeTriggerColorMap, triggerRefTypeMap } from '../../constants/tradeConstants';
+import { assetTypeMap, tradeTypeMap } from '../../constants/tradeConstants';
 import getTradeColumns from './TradeColumns';
 import TradeStatisticsPanel from './TradeStatisticsPanel';
 
@@ -101,13 +101,9 @@ const TradeRecords = () => {
     loadStatistics();
   }, []);
 
-  // 查看详情
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [detailRecord, setDetailRecord] = useState(null);
-
+  // 查看详情 - 跳转到独立详情页
   const handleViewDetail = (record) => {
-    setDetailRecord(record);
-    setDetailVisible(true);
+    window.location.hash = `#/trade-detail/${record.id}`;
   };
 
   const tradeColumns = getTradeColumns(amountVisible, brokerMap, strategyMap, handleViewDetail);
@@ -440,68 +436,7 @@ const TradeRecords = () => {
         </Form>
       </Modal>
 
-      {/* 查看详情弹框 */}
-      <Modal
-        title="交易记录详情"
-        open={detailVisible}
-        onCancel={() => setDetailVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setDetailVisible(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={650}
-        destroyOnClose
-      >
-        {detailRecord && (
-          <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
-            <Descriptions.Item label="ID">{detailRecord.id}</Descriptions.Item>
-            <Descriptions.Item label="交易日期">{detailRecord.tradeDate}</Descriptions.Item>
-            <Descriptions.Item label="券商">{brokerMap[detailRecord.brokerId] || `ID:${detailRecord.brokerId}`}</Descriptions.Item>
-            <Descriptions.Item label="证券类型">
-              <Tag color={assetTypeColorMap[detailRecord.assetType] || 'default'}>
-                {assetTypeMap[detailRecord.assetType] || detailRecord.assetType}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="证券代码">{detailRecord.symbol}</Descriptions.Item>
-            <Descriptions.Item label="底层证券名称">{detailRecord.name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="底层证券">{detailRecord.underlyingSymbol}</Descriptions.Item>
-            <Descriptions.Item label="交易类型">
-              <Tag color={tradeTypeColorMap[detailRecord.tradeType] || 'default'}>
-                {tradeTypeMap[detailRecord.tradeType] || detailRecord.tradeType}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="数量">
-              {amountVisible ? (detailRecord.quantity != null ? detailRecord.quantity.toLocaleString() : '-') : '****'}
-            </Descriptions.Item>
-            <Descriptions.Item label="成交价格">
-              {amountVisible ? (detailRecord.price != null ? Number(detailRecord.price).toFixed(4) : '-') : '****'}
-            </Descriptions.Item>
-            <Descriptions.Item label="成交金额">
-              {amountVisible ? (detailRecord.amount != null ? Number(detailRecord.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-') : '****'}
-            </Descriptions.Item>
-            <Descriptions.Item label="交易费用">
-              {amountVisible ? (detailRecord.fee != null ? Number(detailRecord.fee).toFixed(2) : '-') : '****'}
-            </Descriptions.Item>
-            <Descriptions.Item label="币种">
-              <Tag color={detailRecord.currency === 'CNY' ? 'blue' : detailRecord.currency === 'HKD' ? 'green' : 'purple'}>
-                {detailRecord.currency}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="所属策略">
-              {detailRecord.strategyId ? (strategyMap[detailRecord.strategyId] || `ID:${detailRecord.strategyId}`) : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="触发来源">
-              <Tag color={tradeTriggerColorMap[detailRecord.tradeTrigger] || 'default'}>
-                {tradeTriggerMap[detailRecord.tradeTrigger] || detailRecord.tradeTrigger || '-'}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="触发关联类型">
-              {triggerRefTypeMap[detailRecord.triggerRefType] || detailRecord.triggerRefType || '-'}
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
+
     </Card>
     </div>
   );

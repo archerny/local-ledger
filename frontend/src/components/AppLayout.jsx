@@ -8,12 +8,16 @@ import Dashboard from '../pages/Dashboard';
 import CashFlow from '../pages/CashFlow';
 import BrokerManagement from '../pages/BrokerManagement';
 import TradeRecords from '../pages/trade/TradeRecords';
+import TradeRecordDetail from '../pages/trade/TradeRecordDetail';
 import ProfitAnalysis from '../pages/ProfitAnalysis';
 import Settings from '../pages/Settings';
 import StrategyManagement from '../pages/StrategyManagement';
 import TradeAnomalyAnalysis from '../pages/analysis/TradeAnomalyAnalysis';
 import MarketEvents from '../pages/market-events/MarketEvents';
 import { AmountVisibilityProvider, useAmountVisibility } from '../contexts/AmountVisibilityContext';
+import { PageHeaderProvider } from '../contexts/PageHeaderContext';
+import PageHeaderContext from '../contexts/PageHeaderContext';
+import { PageHeaderBreadcrumb } from './PageHeader';
 import './AppLayout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -26,6 +30,10 @@ const AppLayout = () => {
   // 从 URL hash 中恢复菜单选中状态
   const getMenuKeyFromHash = () => {
     const hash = window.location.hash.replace('#/', '').replace('#', '');
+    // 支持 trade-detail/:id 格式的子页面路由，归属于交易记录菜单
+    if (hash.startsWith('trade-detail/')) {
+      return '3';
+    }
     return pathToMenuKey[hash] || '1';
   };
 
@@ -88,8 +96,21 @@ const AppLayout = () => {
     }
   }, []);
 
+  // 从 hash 中提取交易记录详情的 ID
+  const getTradeDetailIdFromHash = () => {
+    const hash = window.location.hash.replace('#/', '').replace('#', '');
+    const match = hash.match(/^trade-detail\/(.+)$/);
+    return match ? match[1] : null;
+  };
+
   // 根据选中的菜单渲染对应的页面内容
   const renderContent = () => {
+    // 优先判断是否为交易记录详情子页面
+    const tradeDetailId = getTradeDetailIdFromHash();
+    if (tradeDetailId) {
+      return <TradeRecordDetail recordId={tradeDetailId} onBack={() => { window.location.hash = '#/trades'; }} />;
+    }
+
     switch (selectedMenu) {
       case '1':
         return <Dashboard />;
@@ -180,6 +201,7 @@ const AppLayout = () => {
           </Space>
         </Header>
         <Content style={{ margin: '32px 24px 24px', background: '#f5f5f5' }}>
+          <PageHeaderRenderer />
           <div
             style={{
               padding: 24,
@@ -193,6 +215,18 @@ const AppLayout = () => {
         </Content>
       </Layout>
     </Layout>
+  );
+};
+
+/**
+ * 从 PageHeaderContext 中读取配置并渲染面包屑（内部组件）
+ * 标题栏（返回按钮 + 标题 + 标签）由各子页面在白色卡片内自行渲染。
+ */
+const PageHeaderRenderer = () => {
+  const { config } = React.useContext(PageHeaderContext);
+  if (!config) return null;
+  return (
+    <PageHeaderBreadcrumb breadcrumbs={config.breadcrumbs} />
   );
 };
 
@@ -221,7 +255,9 @@ const AmountVisibilityToggle = () => {
  */
 const AppLayoutWithProvider = () => (
   <AmountVisibilityProvider>
-    <AppLayout />
+    <PageHeaderProvider>
+      <AppLayout />
+    </PageHeaderProvider>
   </AmountVisibilityProvider>
 );
 
