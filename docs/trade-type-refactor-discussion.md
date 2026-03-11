@@ -134,7 +134,7 @@ public enum TradeType {
 
 | `trade_trigger` | `trigger_ref_type` | 含义 |
 |-----------------|-------------------|------|
-| `OPTION` | `OPTION_EXPIRE` | 期权到期作废 |
+| `OPTION` | `OPTION_EXPIRE` | 期权到期 |
 | `OPTION` | `OPTION_EXERCISE` | 行权（主动行权 + 自动行权，不区分） |
 | `OPTION` | `OPTION_ASSIGNED` | 被指派 |
 

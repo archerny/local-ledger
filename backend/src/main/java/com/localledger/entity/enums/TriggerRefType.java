@@ -13,7 +13,7 @@ public enum TriggerRefType {
     SYMBOL_CHANGE,
     /** 实物分红事件，关联 events_dividend_in_kind 表 */
     DIVIDEND_IN_KIND,
-    /** 期权到期作废，关联 trade_records 表（期权交易记录） */
+/** 期权到期，关联 trade_records 表（期权交易记录） */
     OPTION_EXPIRE,
     /** 行权（含主动行权和到期自动行权，不区分），关联 trade_records 表（期权交易记录） */
     OPTION_EXERCISE,

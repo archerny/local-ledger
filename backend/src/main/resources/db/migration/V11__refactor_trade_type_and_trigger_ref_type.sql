@@ -11,7 +11,7 @@
 -- 1. 更新 trigger_ref_type 字段注释（反映新增的三个期权子类型）
 -- 注：trigger_ref_type 为 VARCHAR(32)，不是数据库枚举类型，无需 ALTER TYPE，
 --     新增的枚举值（OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED）由应用层 Java Enum 管理
-COMMENT ON COLUMN trade_records.trigger_ref_type IS '触发来源的关联记录类型：NONE-无关联，STOCK_SPLIT-拆股事件，SYMBOL_CHANGE-代码变更，DIVIDEND_IN_KIND-实物分红，OPTION_EXPIRE-期权到期作废，OPTION_EXERCISE-行权，OPTION_ASSIGNED-被指派（旧值 OPTION 已废弃）';
+COMMENT ON COLUMN trade_records.trigger_ref_type IS '触发来源的关联记录类型：NONE-无关联，STOCK_SPLIT-拆股事件，SYMBOL_CHANGE-代码变更，DIVIDEND_IN_KIND-实物分红，OPTION_EXPIRE-期权到期，OPTION_EXERCISE-行权，OPTION_ASSIGNED-被指派（旧值 OPTION 已废弃）';
 
 -- 2. 更新 trade_type 字段注释（标注旧枚举值已废弃）
 -- 注：trade_type 使用的是 PostgreSQL 数据库枚举类型 trade_type_enum（V3 创建），

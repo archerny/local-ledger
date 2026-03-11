@@ -10,7 +10,7 @@
 当前 `trade_records` 表中的所有交易记录，均由用户人工录入，但实际上不同记录的产生原因各不相同：
 
 1. **手动交易** — 用户主动在券商下单执行的买卖
-2. **期权事件** — 期权到期作废、行权、被指派等导致的被动买入或卖出
+2. **期权事件** — 期权到期、行权、被指派等导致的被动买入或卖出
 3. **市场事件** — 拆股、代码变更、实物分红等市场事件由系统自动生成的交易记录
 
 现有的 `trade_type` 字段描述的是「交易做了什么动作」（买入/卖出），而非「这笔交易为什么会发生」。虽然可以通过其他字段间接推断来源，但这种隐式推断不够可靠，随着业务发展映射关系可能变得模糊。
@@ -60,7 +60,7 @@
 | `STOCK_SPLIT` | 拆股事件 | `events_stock_split` |
 | `SYMBOL_CHANGE` | 代码变更事件 | `events_symbol_change` |
 | `DIVIDEND_IN_KIND` | 实物分红事件 | `events_dividend_in_kind` |
-| `OPTION_EXPIRE` | 期权到期作废 | `trade_records`（期权交易记录） |
+| `OPTION_EXPIRE` | 期权到期 | `trade_records`（期权交易记录） |
 | `OPTION_EXERCISE` | 行权（含主动行权和到期自动行权，不区分） | `trade_records`（期权交易记录） |
 | `OPTION_ASSIGNED` | 被指派 | `trade_records`（期权交易记录） |
 
@@ -72,7 +72,7 @@
 | `trade_trigger` | `trigger_ref_type` | `trigger_ref_id` | 含义 |
 |-----------------|--------------------|--------------------|------|
 | `MANUAL` | `NONE` | 0 | 手动交易，无关联记录 |
-| `OPTION` | `OPTION_EXPIRE` | 0 | 期权到期作废，期权侧持仓清零（触发源头，无关联记录） |
+| `OPTION` | `OPTION_EXPIRE` | 0 | 期权到期，期权侧持仓清零（触发源头，无关联记录） |
 | `OPTION` | `OPTION_EXERCISE` | 0 | 行权 — 期权侧持仓清零（触发源头，无关联记录） |
 | `OPTION` | `OPTION_EXERCISE` | 期权侧交易记录 ID | 行权 — 股票侧买入/卖出，关联到期权侧交易记录 |
 | `OPTION` | `OPTION_ASSIGNED` | 0 | 被指派 — 期权侧持仓清零（触发源头，无关联记录） |

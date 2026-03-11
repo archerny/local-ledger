@@ -135,7 +135,7 @@ public class TradeRecord extends BaseEntity {
 
     /**
      * 触发来源的关联记录类型：NONE-无关联，STOCK_SPLIT-拆股，SYMBOL_CHANGE-代码变更，
-     * DIVIDEND_IN_KIND-实物分红，OPTION_EXPIRE-期权到期作废，OPTION_EXERCISE-行权，OPTION_ASSIGNED-被指派
+     * DIVIDEND_IN_KIND-实物分红，OPTION_EXPIRE-期权到期，OPTION_EXERCISE-行权，OPTION_ASSIGNED-被指派
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "trigger_ref_type", nullable = false, length = 32)

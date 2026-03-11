@@ -81,7 +81,7 @@ export const triggerRefTypeMap = {
   STOCK_SPLIT: '拆股事件',
   SYMBOL_CHANGE: '代码变更',
   DIVIDEND_IN_KIND: '实物分红',
-  OPTION_EXPIRE: '期权到期作废',
+OPTION_EXPIRE: '期权到期',
   OPTION_EXERCISE: '行权',
   OPTION_ASSIGNED: '被指派',
   // 以下旧值已废弃，保留仅为兼容存量历史数据展示

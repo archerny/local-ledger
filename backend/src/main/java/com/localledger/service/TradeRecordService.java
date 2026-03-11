@@ -258,10 +258,10 @@ public class TradeRecordService {
                     && refType != TriggerRefType.OPTION_ASSIGNED) {
                 throw new IllegalArgumentException("期权触发的交易 trigger_ref_type 应为 OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED 之一");
             }
-            // 期权到期作废时，price 和 amount 应为 0
+            // 期权到期时，price 和 amount 应为 0
             if (refType == TriggerRefType.OPTION_EXPIRE) {
                 if (record.getPrice() != null && record.getPrice().signum() != 0) {
-                    throw new IllegalArgumentException("期权到期作废的成交价格应为 0");
+                    throw new IllegalArgumentException("期权到期的成交价格应为 0");
                 }
             }
         }

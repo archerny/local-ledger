@@ -68,6 +68,7 @@ public class TradeVerificationService {
      * 4. 美股证券代码格式核对（USD 结算的股票交易）
      * 5. 证券代码类别一致性核对（同一 symbol 不应分属不同 assetType）
      * 6. 旧体系数据兼容核对（检测使用已废弃 TradeType / TriggerRefType 的历史记录）
+     * 7. 触发类型与关联类型一致性核对（OPTION 只能搭配期权类关联类型，MARKET_EVENT 只能搭配市场事件类关联类型）
      */
     public TradeVerificationResult verifyAll() {
         List<TradeRecord> records = tradeRecordRepository.findByIsDeletedFalseOrderByIdDesc();
@@ -93,6 +94,8 @@ public class TradeVerificationService {
             verifyUsStockSymbolFormat(record, result);
             // 规则6：旧体系数据兼容核对
             verifyLegacyDataCompatibility(record, result);
+            // 规则7：触发类型与关联类型一致性核对
+            verifyTriggerRefTypeConsistency(record, result);
         }
 
         // 规则5：证券代码类别一致性核对（全局规则，需在循环外执行）
@@ -247,7 +250,7 @@ public class TradeVerificationService {
      *
      * 通过 trade_trigger = OPTION + trigger_ref_type 识别期权被动操作场景：
      *
-     * (a) 期权到期作废（OPTION_EXPIRE）：
+     * (a) 期权到期（OPTION_EXPIRE）：
      *     期权侧记录的 fee 和 price 都应为 0（到期失效，无成交）
      *
      * (b) 行权/被指派 — 期权侧（OPTION_EXERCISE / OPTION_ASSIGNED，trigger_ref_id = 0）：
@@ -286,10 +289,10 @@ public class TradeVerificationService {
         if (refType == TriggerRefType.OPTION_EXPIRE) {
             // 到期作废：fee 和 price 都应为 0
             if (fee != null && fee.compareTo(BigDecimal.ZERO) != 0) {
-                issues.add("期权到期作废的交易费用应为 0，但实际为 " + fee);
+                issues.add("期权到期的交易费用应为 0，但实际为 " + fee);
             }
             if (price != null && price.compareTo(BigDecimal.ZERO) != 0) {
-                issues.add("期权到期作废的成交价格应为 0，但实际为 " + price);
+                issues.add("期权到期的成交价格应为 0，但实际为 " + price);
             }
         } else if (refType == TriggerRefType.OPTION_EXERCISE || refType == TriggerRefType.OPTION_ASSIGNED) {
             // 行权/被指派 — 期权侧（trigger_ref_id = 0）：fee 应为 0
@@ -446,6 +449,62 @@ public class TradeVerificationService {
             error.setUnderlyingSymbol(record.getUnderlyingSymbol());
             error.setMessage("触发关联类型使用了已废弃的笼统值 OPTION，应更新为 OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED 之一");
             result.addError(error);
+        }
+    }
+
+    /**
+     * 规则7：核对触发类型与关联类型的一致性
+     *
+     * 防止触发类型（trade_trigger）与关联类型（trigger_ref_type）出现交叉错配：
+     *   - 当 trade_trigger = OPTION 时，trigger_ref_type 只能是
+     *     OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED 三者之一
+     *   - 当 trade_trigger = MARKET_EVENT 时，trigger_ref_type 只能是
+     *     STOCK_SPLIT / SYMBOL_CHANGE / DIVIDEND_IN_KIND 三者之一
+     *
+     * 其他 trade_trigger 值（如 MANUAL）不在此规则校验范围内。
+     */
+    private void verifyTriggerRefTypeConsistency(TradeRecord record, TradeVerificationResult result) {
+        TradeTrigger trigger = record.getTradeTrigger();
+        TriggerRefType refType = record.getTriggerRefType();
+
+        if (trigger == null || refType == null) {
+            return;
+        }
+
+        // 期权触发：trigger_ref_type 只能是三种期权子类型
+        if (trigger == TradeTrigger.OPTION) {
+            if (refType != TriggerRefType.OPTION_EXPIRE
+                    && refType != TriggerRefType.OPTION_EXERCISE
+                    && refType != TriggerRefType.OPTION_ASSIGNED) {
+                TradeVerificationResult.ErrorDetail error = new TradeVerificationResult.ErrorDetail();
+                error.setRecordId(record.getId());
+                error.setRuleName("触发类型关联类型一致性");
+                error.setAssetType(record.getAssetType().name());
+                error.setActualSymbol(record.getSymbol());
+                error.setExpectedFormat("OPTION → OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED");
+                error.setUnderlyingSymbol(record.getUnderlyingSymbol());
+                error.setMessage("触发类型为 OPTION，但关联类型为 " + refType.name()
+                        + "，应为 OPTION_EXPIRE / OPTION_EXERCISE / OPTION_ASSIGNED 之一");
+                result.addError(error);
+            }
+        }
+
+        // 市场事件触发：trigger_ref_type 只能是三种市场事件子类型
+        if (trigger == TradeTrigger.MARKET_EVENT) {
+            if (refType != TriggerRefType.STOCK_SPLIT
+                    && refType != TriggerRefType.SYMBOL_CHANGE
+                    && refType != TriggerRefType.DIVIDEND_IN_KIND) {
+                TradeVerificationResult.ErrorDetail error = new TradeVerificationResult.ErrorDetail();
+                error.setRecordId(record.getId());
+                error.setRuleName("触发类型关联类型一致性");
+                error.setAssetType(record.getAssetType().name());
+                error.setActualSymbol(record.getSymbol());
+                error.setExpectedFormat("MARKET_EVENT → STOCK_SPLIT / SYMBOL_CHANGE / DIVIDEND_IN_KIND");
+                error.setUnderlyingSymbol(record.getUnderlyingSymbol());
+                error.setMessage("触发类型为 MARKET_EVENT，但关联类型为 " + refType.name()
+                        + "，应为 STOCK_SPLIT / SYMBOL_CHANGE / DIVIDEND_IN_KIND 之一");
+                result.addError(error);
+            }
         }
     }
 
