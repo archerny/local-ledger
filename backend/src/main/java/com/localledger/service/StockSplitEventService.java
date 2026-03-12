@@ -2,7 +2,9 @@ package com.localledger.service;
 
 import com.localledger.entity.StockSplitEvent;
 import com.localledger.entity.enums.Currency;
+import com.localledger.entity.enums.TriggerRefType;
 import com.localledger.repository.StockSplitEventRepository;
+import com.localledger.repository.TradeRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class StockSplitEventService {
 
     @Autowired
     private StockSplitEventRepository stockSplitEventRepository;
+
+    @Autowired
+    private TradeRecordRepository tradeRecordRepository;
 
     @Autowired
     private MarketEventProcessingService marketEventProcessingService;
@@ -121,6 +126,10 @@ public class StockSplitEventService {
         existing.setProcessed(false);
         existing.setProcessedAt(null);
         stockSplitEventRepository.save(existing);
+
+        // 先清理被删除事件自身关联的系统交易记录
+        tradeRecordRepository.deleteByTriggerRefTypeAndTriggerRefIdIn(
+                TriggerRefType.STOCK_SPLIT, List.of(existing.getId()));
 
         // 删除后级联重算
         Set<String> affectedSymbols = new HashSet<>();

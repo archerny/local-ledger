@@ -2,7 +2,9 @@ package com.localledger.service;
 
 import com.localledger.entity.SymbolChangeEvent;
 import com.localledger.entity.enums.Currency;
+import com.localledger.entity.enums.TriggerRefType;
 import com.localledger.repository.SymbolChangeEventRepository;
+import com.localledger.repository.TradeRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class SymbolChangeEventService {
 
     @Autowired
     private SymbolChangeEventRepository symbolChangeEventRepository;
+
+    @Autowired
+    private TradeRecordRepository tradeRecordRepository;
 
     @Autowired
     private MarketEventProcessingService marketEventProcessingService;
@@ -138,6 +143,10 @@ public class SymbolChangeEventService {
         existing.setProcessed(false);
         existing.setProcessedAt(null);
         symbolChangeEventRepository.save(existing);
+
+        // 先清理被删除事件自身关联的系统交易记录
+        tradeRecordRepository.deleteByTriggerRefTypeAndTriggerRefIdIn(
+                TriggerRefType.SYMBOL_CHANGE, List.of(existing.getId()));
 
         // 删除后级联重算
         Set<String> affectedSymbols = new HashSet<>();

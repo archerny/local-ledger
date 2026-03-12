@@ -2,7 +2,9 @@ package com.localledger.service;
 
 import com.localledger.entity.DividendInKindEvent;
 import com.localledger.entity.enums.Currency;
+import com.localledger.entity.enums.TriggerRefType;
 import com.localledger.repository.DividendInKindEventRepository;
+import com.localledger.repository.TradeRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class DividendInKindEventService {
 
     @Autowired
     private DividendInKindEventRepository dividendInKindEventRepository;
+
+    @Autowired
+    private TradeRecordRepository tradeRecordRepository;
 
     @Autowired
     private MarketEventProcessingService marketEventProcessingService;
@@ -133,6 +138,10 @@ public class DividendInKindEventService {
         existing.setProcessed(false);
         existing.setProcessedAt(null);
         dividendInKindEventRepository.save(existing);
+
+        // 先清理被删除事件自身关联的系统交易记录
+        tradeRecordRepository.deleteByTriggerRefTypeAndTriggerRefIdIn(
+                TriggerRefType.DIVIDEND_IN_KIND, List.of(existing.getId()));
 
         // 删除后级联重算
         Set<String> affectedSymbols = new HashSet<>();
