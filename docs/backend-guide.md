@@ -156,6 +156,8 @@ backend/
 
 ## 单元测试
 
+> 📋 完整的单元测试规范请参阅 [单元测试规范](unit-test-spec.md)。核心原则：**单元测试不得操作数据库中的数据**。
+
 ### 测试框架
 
 - **JUnit 5** - 测试框架（通过 `spring-boot-starter-test` 内置）

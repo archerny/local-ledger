@@ -240,6 +240,8 @@ npm install --registry=https://registry.npmjs.org/
 
 ## 单元测试
 
+> 📋 完整的单元测试规范请参阅 [单元测试规范](unit-test-spec.md)。核心原则：**单元测试不得操作数据库中的数据**。
+
 ### 测试框架
 
 - **Vitest** - 基于 Vite 的测试框架，开箱即用，无需额外编译配置
