@@ -90,7 +90,7 @@ const TradeStatisticsPanel = ({ statistics, amountVisible }) => {
                 )}
                 {statistics.totalFeeCNY > 0 && (
                   <div style={{ marginBottom: 4 }}>
-                    <span style={{ color: '#69b1ff', fontWeight: 'bold' }}>¥ {Number(statistics.totalFeeCNY).toFixed(2)}</span>
+                    <span style={{ color: '#69b1ff', fontWeight: 'bold' }}>CN¥ {Number(statistics.totalFeeCNY).toFixed(2)}</span>
                   </div>
                 )}
                 {statistics.totalFeeHKD > 0 && (

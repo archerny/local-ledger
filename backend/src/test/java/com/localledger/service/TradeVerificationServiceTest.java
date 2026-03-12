@@ -4,7 +4,6 @@ import com.localledger.dto.TradeVerificationResult;
 import com.localledger.entity.TradeRecord;
 import com.localledger.entity.enums.*;
 import com.localledger.repository.TradeRecordRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
