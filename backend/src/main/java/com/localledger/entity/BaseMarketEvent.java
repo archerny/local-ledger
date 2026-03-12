@@ -6,6 +6,7 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 市场异动事件基础实体类
@@ -51,6 +52,19 @@ public abstract class BaseMarketEvent extends BaseEntity {
      */
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
+
+    /**
+     * 是否已处理（默认 false）
+     * 区分「未处理」和「处理后无影响」
+     */
+    @Column(name = "processed")
+    private Boolean processed = false;
+
+    /**
+     * 处理时间
+     */
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
 
     // ============ Getters and Setters ============
 
@@ -100,5 +114,21 @@ public abstract class BaseMarketEvent extends BaseEntity {
 
     public void setIsDeleted(Boolean isDeleted) {
         this.isDeleted = isDeleted;
+    }
+
+    public Boolean getProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(Boolean processed) {
+        this.processed = processed;
+    }
+
+    public LocalDateTime getProcessedAt() {
+        return processedAt;
+    }
+
+    public void setProcessedAt(LocalDateTime processedAt) {
+        this.processedAt = processedAt;
     }
 }

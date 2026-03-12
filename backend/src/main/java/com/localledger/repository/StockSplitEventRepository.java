@@ -31,4 +31,16 @@ public interface StockSplitEventRepository extends BaseRepository<StockSplitEven
      * 查询所有未删除的记录
      */
     List<StockSplitEvent> findByIsDeletedFalseOrderByEventDateDesc();
+
+    /**
+     * 查询某个 symbol 在指定日期当天及之后的所有未删除事件（按事件日期升序）
+     * 用于级联重算
+     */
+    List<StockSplitEvent> findBySymbolAndEventDateGreaterThanEqualAndIsDeletedFalseOrderByEventDateAsc(String symbol, LocalDate eventDate);
+
+    /**
+     * 查询涉及指定 symbols 集合，且在指定日期当天及之后的所有未删除事件（按事件日期升序）
+     * 用于级联重算
+     */
+    List<StockSplitEvent> findBySymbolInAndEventDateGreaterThanEqualAndIsDeletedFalseOrderByEventDateAsc(java.util.Collection<String> symbols, LocalDate eventDate);
 }

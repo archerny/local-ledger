@@ -111,4 +111,21 @@ public interface TradeRecordRepository extends BaseRepository<TradeRecord, Long>
      * 根据交易触发来源查询未删除的交易记录
      */
     List<TradeRecord> findByTradeTriggerAndIsDeletedFalseOrderByTradeDateDesc(TradeTrigger tradeTrigger);
+
+    /**
+     * 根据触发关联类型和关联ID列表查询未删除的交易记录
+     * 用于级联重算时，批量查找多个市场事件生成的所有系统交易记录
+     */
+    List<TradeRecord> findByTriggerRefTypeAndTriggerRefIdInAndIsDeletedFalse(TriggerRefType triggerRefType, java.util.Collection<Long> triggerRefIds);
+
+    /**
+     * 批量删除指定触发类型和触发ID列表关联的交易记录（物理删除）
+     * 用于级联重算时清理旧的系统交易记录
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM TradeRecord t WHERE t.triggerRefType = :refType AND t.triggerRefId IN :refIds")
+    void deleteByTriggerRefTypeAndTriggerRefIdIn(
+        @Param("refType") TriggerRefType refType,
+        @Param("refIds") java.util.Collection<Long> refIds
+    );
 }

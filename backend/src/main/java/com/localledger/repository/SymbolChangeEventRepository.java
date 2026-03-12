@@ -41,4 +41,18 @@ public interface SymbolChangeEventRepository extends BaseRepository<SymbolChange
      * 查询所有未删除的记录
      */
     List<SymbolChangeEvent> findByIsDeletedFalseOrderByEventDateDesc();
+
+    /**
+     * 查询涉及指定 symbols 集合（匹配 oldSymbol 或 newSymbol），且在指定日期当天及之后的所有未删除事件
+     * 用于级联重算
+     */
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT e FROM SymbolChangeEvent e WHERE e.isDeleted = false " +
+        "AND (e.oldSymbol IN :symbols OR e.newSymbol IN :symbols) " +
+        "AND e.eventDate >= :eventDate ORDER BY e.eventDate ASC"
+    )
+    List<SymbolChangeEvent> findAffectedEvents(
+        @org.springframework.data.repository.query.Param("symbols") java.util.Collection<String> symbols,
+        @org.springframework.data.repository.query.Param("eventDate") LocalDate eventDate
+    );
 }

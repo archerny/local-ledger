@@ -36,4 +36,18 @@ public interface DividendInKindEventRepository extends BaseRepository<DividendIn
      * 查询所有未删除的记录
      */
     List<DividendInKindEvent> findByIsDeletedFalseOrderByEventDateDesc();
+
+    /**
+     * 查询涉及指定 symbols 集合（匹配 symbol 或 dividendSymbol），且在指定日期当天及之后的所有未删除事件
+     * 用于级联重算
+     */
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT e FROM DividendInKindEvent e WHERE e.isDeleted = false " +
+        "AND (e.symbol IN :symbols OR e.dividendSymbol IN :symbols) " +
+        "AND e.eventDate >= :eventDate ORDER BY e.eventDate ASC"
+    )
+    List<DividendInKindEvent> findAffectedEvents(
+        @org.springframework.data.repository.query.Param("symbols") java.util.Collection<String> symbols,
+        @org.springframework.data.repository.query.Param("eventDate") java.time.LocalDate eventDate
+    );
 }

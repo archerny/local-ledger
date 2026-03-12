@@ -3,9 +3,14 @@ package com.localledger.service;
 import com.localledger.entity.DividendInKindEvent;
 import com.localledger.entity.enums.Currency;
 import com.localledger.repository.DividendInKindEventRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,8 +23,13 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class DividendInKindEventService {
 
+    private static final Logger log = LoggerFactory.getLogger(DividendInKindEventService.class);
+
     @Autowired
     private DividendInKindEventRepository dividendInKindEventRepository;
+
+    @Autowired
+    private MarketEventProcessingService marketEventProcessingService;
 
     /**
      * 查询所有未删除的实物分红事件
@@ -64,20 +74,29 @@ public class DividendInKindEventService {
     }
 
     /**
-     * 新增实物分红事件
+     * 新增实物分红事件，并自动生成系统交易记录
      */
     @Transactional
     public DividendInKindEvent create(DividendInKindEvent event) {
-        return dividendInKindEventRepository.save(event);
+        DividendInKindEvent saved = dividendInKindEventRepository.save(event);
+        log.info("实物分红事件已保存: id={}, symbol={}, dividendSymbol={}, eventDate={}",
+                saved.getId(), saved.getSymbol(), saved.getDividendSymbol(), saved.getEventDate());
+        marketEventProcessingService.processDividendInKindEvent(saved);
+        return saved;
     }
 
     /**
-     * 更新实物分红事件
+     * 更新实物分红事件，并重新生成系统交易记录
      */
     @Transactional
     public DividendInKindEvent update(Long id, DividendInKindEvent eventData) {
         DividendInKindEvent existing = dividendInKindEventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("实物分红事件不存在, ID: " + id));
+
+        // 记录旧值，用于确定受影响范围
+        String oldSymbol = existing.getSymbol();
+        String oldDividendSymbol = existing.getDividendSymbol();
+        java.time.LocalDate oldDate = existing.getEventDate();
 
         existing.setSymbol(eventData.getSymbol());
         existing.setSymbolName(eventData.getSymbolName());
@@ -86,19 +105,39 @@ public class DividendInKindEventService {
         existing.setDividendSymbol(eventData.getDividendSymbol());
         existing.setDividendSymbolName(eventData.getDividendSymbolName());
         existing.setDividendQtyPerShare(eventData.getDividendQtyPerShare());
+        existing.setFairValuePerShare(eventData.getFairValuePerShare());
         existing.setDescription(eventData.getDescription());
 
-        return dividendInKindEventRepository.save(existing);
+        DividendInKindEvent saved = dividendInKindEventRepository.save(existing);
+
+        // 级联重算：受影响 symbols 包含新旧所有 symbols
+        Set<String> affectedSymbols = new HashSet<>();
+        affectedSymbols.add(oldSymbol);
+        affectedSymbols.add(oldDividendSymbol);
+        affectedSymbols.add(saved.getSymbol());
+        affectedSymbols.add(saved.getDividendSymbol());
+        java.time.LocalDate sinceDate = oldDate.isBefore(saved.getEventDate()) ? oldDate : saved.getEventDate();
+        marketEventProcessingService.processEventDeletion(affectedSymbols, sinceDate);
+
+        return saved;
     }
 
     /**
-     * 软删除实物分红事件
+     * 软删除实物分红事件，并级联重算后续事件
      */
     @Transactional
     public void delete(Long id) {
         DividendInKindEvent existing = dividendInKindEventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("实物分红事件不存在, ID: " + id));
         existing.setIsDeleted(true);
+        existing.setProcessed(false);
+        existing.setProcessedAt(null);
         dividendInKindEventRepository.save(existing);
+
+        // 删除后级联重算
+        Set<String> affectedSymbols = new HashSet<>();
+        affectedSymbols.add(existing.getSymbol());
+        affectedSymbols.add(existing.getDividendSymbol());
+        marketEventProcessingService.processEventDeletion(affectedSymbols, existing.getEventDate());
     }
 }

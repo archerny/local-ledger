@@ -31,6 +31,12 @@ public class DividendInKindEvent extends BaseMarketEvent {
     @Column(name = "dividend_qty_per_share", nullable = false, precision = 15, scale = 6)
     private BigDecimal dividendQtyPerShare;
 
+    /**
+     * 每股公允价格，用于建立分红新持仓的成本基础
+     */
+    @Column(name = "fair_value_per_share", precision = 15, scale = 4)
+    private BigDecimal fairValuePerShare;
+
     // ============ Constructors ============
 
     public DividendInKindEvent() {
@@ -62,6 +68,14 @@ public class DividendInKindEvent extends BaseMarketEvent {
         this.dividendQtyPerShare = dividendQtyPerShare;
     }
 
+    public BigDecimal getFairValuePerShare() {
+        return fairValuePerShare;
+    }
+
+    public void setFairValuePerShare(BigDecimal fairValuePerShare) {
+        this.fairValuePerShare = fairValuePerShare;
+    }
+
     @Override
     public String toString() {
         return "DividendInKindEvent{" +
@@ -73,8 +87,10 @@ public class DividendInKindEvent extends BaseMarketEvent {
                 ", dividendSymbol='" + dividendSymbol + '\'' +
                 ", dividendSymbolName='" + dividendSymbolName + '\'' +
                 ", dividendQtyPerShare=" + dividendQtyPerShare +
+                ", fairValuePerShare=" + fairValuePerShare +
                 ", description='" + getDescription() + '\'' +
                 ", isDeleted=" + getIsDeleted() +
+                ", processed=" + getProcessed() +
                 '}';
     }
 }
