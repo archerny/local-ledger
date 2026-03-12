@@ -88,7 +88,7 @@ echo -e "${CYAN}========================================${NC}"
 echo ""
 
 # ---------- Step 1: 环境检查 ----------
-log_step "Step 1/4 - 环境检查"
+log_step "Step 1/5 - 环境检查"
 
 # 检查 Node.js
 if ! command -v node &> /dev/null; then
@@ -118,7 +118,7 @@ fi
 log_info "项目根目录: $PROJECT_ROOT"
 
 # ---------- Step 2: 安装依赖 ----------
-log_step "Step 2/4 - 安装依赖"
+log_step "Step 2/5 - 安装依赖"
 
 cd "$FRONTEND_DIR"
 
@@ -135,7 +135,7 @@ else
 fi
 
 # ---------- Step 3: Vite 构建 ----------
-log_step "Step 3/4 - Vite 构建"
+log_step "Step 3/5 - Vite 构建"
 
 # 如果指定了 API 地址，通过环境变量传入
 if [ -n "$API_BASE_URL" ]; then
@@ -152,7 +152,7 @@ if [ ! -d "$FRONTEND_DIR/dist" ]; then
 fi
 
 # ---------- Step 4: 复制到输出目录 ----------
-log_step "Step 4/4 - 复制构建产物"
+log_step "Step 4/5 - 复制构建产物"
 
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
@@ -161,6 +161,25 @@ cp -r "$FRONTEND_DIR/dist/"* "$OUTPUT_DIR/"
 # 统计产物信息
 FILE_COUNT=$(find "$OUTPUT_DIR" -type f | wc -l | tr -d ' ')
 TOTAL_SIZE=$(du -sh "$OUTPUT_DIR" | cut -f1)
+
+# ---------- Step 5: 打包压缩 ----------
+log_step "Step 5/5 - 打包压缩"
+
+PACKAGE_DIR="$SCRIPT_DIR/output"
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+ARCHIVE_NAME="local-ledger-frontend-${TIMESTAMP}"
+
+cd "$PACKAGE_DIR"
+
+# 打包为 tar.gz
+tar -czf "${ARCHIVE_NAME}.tar.gz" -C "$PACKAGE_DIR" frontend/
+TAR_SIZE=$(du -h "${ARCHIVE_NAME}.tar.gz" | cut -f1)
+log_info "TAR 包: ${ARCHIVE_NAME}.tar.gz ($TAR_SIZE)"
+
+# 打包为 zip
+zip -rq "${ARCHIVE_NAME}.zip" frontend/
+ZIP_SIZE=$(du -h "${ARCHIVE_NAME}.zip" | cut -f1)
+log_info "ZIP 包: ${ARCHIVE_NAME}.zip ($ZIP_SIZE)"
 
 # ---------- 完成 ----------
 echo ""
@@ -171,9 +190,12 @@ echo ""
 log_info "产物目录: $OUTPUT_DIR"
 log_info "文件数量: $FILE_COUNT"
 log_info "总大小:   $TOTAL_SIZE"
+log_info "TAR 包:   $PACKAGE_DIR/${ARCHIVE_NAME}.tar.gz ($TAR_SIZE)"
+log_info "ZIP 包:   $PACKAGE_DIR/${ARCHIVE_NAME}.zip ($ZIP_SIZE)"
 echo ""
 log_info "部署方式:"
 echo "  将 $OUTPUT_DIR 目录下的文件部署到 Web 服务器（Nginx/Apache 等）"
+echo "  或直接使用压缩包分发"
 echo ""
 log_info "本地预览:"
 echo "  cd $FRONTEND_DIR && npm run preview"

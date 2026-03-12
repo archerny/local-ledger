@@ -89,7 +89,7 @@ echo -e "${CYAN}========================================${NC}"
 echo ""
 
 # ---------- Step 1: 环境检查 ----------
-log_step "Step 1/4 - 环境检查"
+log_step "Step 1/5 - 环境检查"
 
 # 检查 Java
 if ! command -v java &> /dev/null; then
@@ -119,7 +119,7 @@ fi
 log_info "项目根目录: $PROJECT_ROOT"
 
 # ---------- Step 2: Maven 构建 ----------
-log_step "Step 2/4 - Maven 构建"
+log_step "Step 2/5 - Maven 构建"
 
 cd "$BACKEND_DIR"
 
@@ -133,7 +133,7 @@ log_info "执行: mvn $MVN_ARGS"
 mvn $MVN_ARGS
 
 # ---------- Step 3: 检查产物 ----------
-log_step "Step 3/4 - 检查构建产物"
+log_step "Step 3/5 - 检查构建产物"
 
 JAR_PATH="$BACKEND_DIR/target/$JAR_NAME"
 if [ ! -f "$JAR_PATH" ]; then
@@ -145,7 +145,7 @@ JAR_SIZE=$(du -h "$JAR_PATH" | cut -f1)
 log_info "JAR 文件: $JAR_NAME ($JAR_SIZE)"
 
 # ---------- Step 4: 复制到输出目录 ----------
-log_step "Step 4/4 - 复制构建产物"
+log_step "Step 4/5 - 复制构建产物"
 
 mkdir -p "$OUTPUT_DIR"
 cp "$JAR_PATH" "$OUTPUT_DIR/"
@@ -170,6 +170,25 @@ java -jar "$SCRIPT_DIR/$JAR_NAME" --spring.profiles.active="$PROFILE"
 STARTUP_EOF
 chmod +x "$OUTPUT_DIR/start.sh"
 
+# ---------- Step 5: 打包压缩 ----------
+log_step "Step 5/5 - 打包压缩"
+
+PACKAGE_DIR="$SCRIPT_DIR/output"
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+ARCHIVE_NAME="local-ledger-backend-${TIMESTAMP}"
+
+cd "$PACKAGE_DIR"
+
+# 打包为 tar.gz
+tar -czf "${ARCHIVE_NAME}.tar.gz" -C "$PACKAGE_DIR" backend/
+TAR_SIZE=$(du -h "${ARCHIVE_NAME}.tar.gz" | cut -f1)
+log_info "TAR 包: ${ARCHIVE_NAME}.tar.gz ($TAR_SIZE)"
+
+# 打包为 zip
+zip -rq "${ARCHIVE_NAME}.zip" backend/
+ZIP_SIZE=$(du -h "${ARCHIVE_NAME}.zip" | cut -f1)
+log_info "ZIP 包: ${ARCHIVE_NAME}.zip ($ZIP_SIZE)"
+
 # ---------- 完成 ----------
 echo ""
 echo -e "${GREEN}========================================${NC}"
@@ -179,6 +198,8 @@ echo ""
 log_info "产物目录: $OUTPUT_DIR"
 log_info "JAR 文件: $OUTPUT_DIR/$JAR_NAME ($JAR_SIZE)"
 log_info "启动脚本: $OUTPUT_DIR/start.sh"
+log_info "TAR 包:   $PACKAGE_DIR/${ARCHIVE_NAME}.tar.gz ($TAR_SIZE)"
+log_info "ZIP 包:   $PACKAGE_DIR/${ARCHIVE_NAME}.zip ($ZIP_SIZE)"
 echo ""
 log_info "启动方式:"
 echo "  cd $OUTPUT_DIR"

@@ -36,3 +36,5 @@ application-local.properties
 
 # ========== 构建产物 ==========
 deploy/output/
+deploy/*.tar.gz
+deploy/*.zip
