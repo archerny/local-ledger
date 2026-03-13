@@ -51,7 +51,7 @@ public class SymbolChangeEvent extends BaseMarketEvent {
         return "SymbolChangeEvent{" +
                 "id=" + getId() +
                 ", symbol='" + getSymbol() + '\'' +
-                ", symbolName='" + getSymbolName() + '\'' +
+                ", underlyingSymbolName='" + getUnderlyingSymbolName() + '\'' +
                 ", currency=" + getCurrency() +
                 ", eventDate=" + getEventDate() +
                 ", oldSymbol='" + oldSymbol + '\'' +

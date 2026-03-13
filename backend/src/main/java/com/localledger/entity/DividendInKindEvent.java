@@ -81,7 +81,7 @@ public class DividendInKindEvent extends BaseMarketEvent {
         return "DividendInKindEvent{" +
                 "id=" + getId() +
                 ", symbol='" + getSymbol() + '\'' +
-                ", symbolName='" + getSymbolName() + '\'' +
+                ", underlyingSymbolName='" + getUnderlyingSymbolName() + '\'' +
                 ", currency=" + getCurrency() +
                 ", eventDate=" + getEventDate() +
                 ", dividendSymbol='" + dividendSymbol + '\'' +

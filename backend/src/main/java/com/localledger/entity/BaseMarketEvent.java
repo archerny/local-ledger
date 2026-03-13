@@ -22,10 +22,10 @@ public abstract class BaseMarketEvent extends BaseEntity {
     private String symbol;
 
     /**
-     * 证券名称
+     * 底层证券名称
      */
-    @Column(name = "symbol_name", length = 200)
-    private String symbolName;
+    @Column(name = "underlying_symbol_name", length = 200)
+    private String underlyingSymbolName;
 
     /**
      * 所属市场币种
@@ -76,12 +76,12 @@ public abstract class BaseMarketEvent extends BaseEntity {
         this.symbol = symbol;
     }
 
-    public String getSymbolName() {
-        return symbolName;
+    public String getUnderlyingSymbolName() {
+        return underlyingSymbolName;
     }
 
-    public void setSymbolName(String symbolName) {
-        this.symbolName = symbolName;
+    public void setUnderlyingSymbolName(String underlyingSymbolName) {
+        this.underlyingSymbolName = underlyingSymbolName;
     }
 
     public Currency getCurrency() {

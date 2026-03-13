@@ -104,7 +104,7 @@ public class DividendInKindEventService {
         java.time.LocalDate oldDate = existing.getEventDate();
 
         existing.setSymbol(eventData.getSymbol());
-        existing.setSymbolName(eventData.getSymbolName());
+        existing.setUnderlyingSymbolName(eventData.getUnderlyingSymbolName());
         existing.setCurrency(eventData.getCurrency());
         existing.setEventDate(eventData.getEventDate());
         existing.setDividendSymbol(eventData.getDividendSymbol());

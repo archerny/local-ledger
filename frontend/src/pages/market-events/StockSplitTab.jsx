@@ -56,9 +56,9 @@ const StockSplitTab = () => {
       render: (text) => <Text code>{text}</Text>,
     },
     {
-      title: '证券名称',
-      dataIndex: 'symbolName',
-      key: 'symbolName',
+      title: '底层证券名称',
+      dataIndex: 'underlyingSymbolName',
+      key: 'underlyingSymbolName',
       width: 140,
       render: (text) => text || <Text type="secondary">-</Text>,
     },
@@ -137,7 +137,7 @@ const StockSplitTab = () => {
     setEditingRecord(record);
     form.setFieldsValue({
       symbol: record.symbol,
-      symbolName: record.symbolName,
+      underlyingSymbolName: record.underlyingSymbolName,
       currency: record.currency,
       eventDate: record.eventDate ? dayjs(record.eventDate) : null,
       ratioFrom: record.ratioFrom,
@@ -242,8 +242,8 @@ const StockSplitTab = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="证券名称" name="symbolName">
-                <Input placeholder="证券名称（选填）" />
+              <Form.Item label="底层证券名称" name="underlyingSymbolName">
+                <Input placeholder="底层证券名称（选填）" />
               </Form.Item>
             </Col>
           </Row>
