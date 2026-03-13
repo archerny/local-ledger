@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Card, Table, Tag, Button, message, Statistic, Space, Spin, Typography, Tooltip,
   DatePicker, Select, Empty,
@@ -25,6 +25,7 @@ const PositionSnapshotTab = () => {
   const [hasQueried, setHasQueried] = useState(false);
   const [brokerList, setBrokerList] = useState([]);
   const [positionUnderlyingFilter, setPositionUnderlyingFilter] = useState(null);
+  const initialQueryDone = useRef(false);
 
   // 加载券商列表
   useEffect(() => {
@@ -70,6 +71,14 @@ const PositionSnapshotTab = () => {
       setPositionLoading(false);
     }
   }, [positionDate, positionBrokerId]);
+
+  // 组件挂载时自动查询今天的持仓数据
+  useEffect(() => {
+    if (initialQueryDone.current) return;
+    initialQueryDone.current = true;
+    handleQueryPositions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 持仓表格列定义
   const positionColumns = [
