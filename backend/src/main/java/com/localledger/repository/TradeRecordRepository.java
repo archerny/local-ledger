@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 交易记录 Repository 接口
@@ -128,4 +129,10 @@ public interface TradeRecordRepository extends BaseRepository<TradeRecord, Long>
         @Param("refType") TriggerRefType refType,
         @Param("refIds") java.util.Collection<Long> refIds
     );
+
+    /**
+     * 根据证券代码查询最近一条未删除的交易记录
+     * 用于自动填充市场事件中的 currency 和 name 等字段
+     */
+    Optional<TradeRecord> findFirstBySymbolAndIsDeletedFalseOrderByTradeDateDesc(String symbol);
 }

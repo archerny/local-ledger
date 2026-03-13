@@ -23,6 +23,12 @@ public class SymbolChangeEvent extends BaseMarketEvent {
     @Column(name = "new_symbol", nullable = false, length = 50)
     private String newSymbol;
 
+    /**
+     * 变更后底层证券名称
+     */
+    @Column(name = "new_underlying_symbol_name", length = 200)
+    private String newUnderlyingSymbolName;
+
     // ============ Constructors ============
 
     public SymbolChangeEvent() {
@@ -46,12 +52,21 @@ public class SymbolChangeEvent extends BaseMarketEvent {
         this.newSymbol = newSymbol;
     }
 
+    public String getNewUnderlyingSymbolName() {
+        return newUnderlyingSymbolName;
+    }
+
+    public void setNewUnderlyingSymbolName(String newUnderlyingSymbolName) {
+        this.newUnderlyingSymbolName = newUnderlyingSymbolName;
+    }
+
     @Override
     public String toString() {
         return "SymbolChangeEvent{" +
                 "id=" + getId() +
                 ", symbol='" + getSymbol() + '\'' +
                 ", underlyingSymbolName='" + getUnderlyingSymbolName() + '\'' +
+                ", newUnderlyingSymbolName='" + newUnderlyingSymbolName + '\'' +
                 ", currency=" + getCurrency() +
                 ", eventDate=" + getEventDate() +
                 ", oldSymbol='" + oldSymbol + '\'' +

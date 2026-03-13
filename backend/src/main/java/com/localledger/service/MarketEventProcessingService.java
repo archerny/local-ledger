@@ -350,7 +350,7 @@ public class MarketEventProcessingService {
             buyRecord.setBrokerId(position.getBrokerId());
             buyRecord.setAssetType(position.getAssetType());
             buyRecord.setSymbol(event.getNewSymbol());
-            buyRecord.setName(event.getUnderlyingSymbolName()); // 使用事件中的新名称
+            buyRecord.setName(event.getNewUnderlyingSymbolName()); // 使用变更后的底层证券名称
             buyRecord.setUnderlyingSymbol(event.getNewSymbol());
             buyRecord.setTradeType(TradeType.BUY);
             buyRecord.setQuantity(position.getQuantity());

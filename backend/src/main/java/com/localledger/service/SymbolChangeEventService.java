@@ -87,9 +87,19 @@ public class SymbolChangeEventService {
 
     /**
      * 新增代码变更事件，并自动生成系统交易记录
+     * 自动填充以下字段：
+     * - symbol = oldSymbol（事件发生前的证券代码）
+     * - currency：从 oldSymbol 的已有交易记录中获取
+     * - underlyingSymbolName：从 oldSymbol 的已有交易记录中获取（旧的底层证券名称）
      */
     @Transactional
     public SymbolChangeEvent create(SymbolChangeEvent event) {
+        // 自动填充：symbol = oldSymbol（事件是对旧代码发生的）
+        event.setSymbol(event.getOldSymbol());
+
+        // 从 oldSymbol 的已有交易记录中自动填充 currency 和 underlyingSymbolName
+        autoFillFromExistingTradeRecord(event);
+
         SymbolChangeEvent saved = symbolChangeEventRepository.save(event);
         log.info("代码变更事件已保存: id={}, {}=>{}, eventDate={}",
                 saved.getId(), saved.getOldSymbol(), saved.getNewSymbol(), saved.getEventDate());
@@ -110,13 +120,15 @@ public class SymbolChangeEventService {
         String oldNewSymbol = existing.getNewSymbol();
         java.time.LocalDate oldDate = existing.getEventDate();
 
-        existing.setSymbol(eventData.getSymbol());
-        existing.setUnderlyingSymbolName(eventData.getUnderlyingSymbolName());
-        existing.setCurrency(eventData.getCurrency());
+        existing.setSymbol(eventData.getOldSymbol()); // symbol = oldSymbol
         existing.setEventDate(eventData.getEventDate());
         existing.setOldSymbol(eventData.getOldSymbol());
         existing.setNewSymbol(eventData.getNewSymbol());
+        existing.setNewUnderlyingSymbolName(eventData.getNewUnderlyingSymbolName());
         existing.setDescription(eventData.getDescription());
+
+        // 重新自动填充 currency 和 underlyingSymbolName（旧代码可能已变更）
+        autoFillFromExistingTradeRecord(existing);
 
         SymbolChangeEvent saved = symbolChangeEventRepository.save(existing);
 
@@ -153,5 +165,26 @@ public class SymbolChangeEventService {
         affectedSymbols.add(existing.getOldSymbol());
         affectedSymbols.add(existing.getNewSymbol());
         marketEventProcessingService.processEventDeletion(affectedSymbols, existing.getEventDate());
+    }
+
+    /**
+     * 从 oldSymbol 的已有交易记录中自动填充 currency 和 underlyingSymbolName
+     * 如果 oldSymbol 有交易记录，则用其 currency 和 name 填充
+     * 如果没有交易记录，则保持前端传入的值（如果有的话）
+     */
+    private void autoFillFromExistingTradeRecord(SymbolChangeEvent event) {
+        tradeRecordRepository.findFirstBySymbolAndIsDeletedFalseOrderByTradeDateDesc(event.getOldSymbol())
+                .ifPresent(record -> {
+                    // 自动填充币种
+                    if (event.getCurrency() == null) {
+                        event.setCurrency(record.getCurrency());
+                        log.debug("自动填充币种: {} (来自 {} 的交易记录)", record.getCurrency(), event.getOldSymbol());
+                    }
+                    // 自动填充旧的底层证券名称
+                    if (event.getUnderlyingSymbolName() == null || event.getUnderlyingSymbolName().isBlank()) {
+                        event.setUnderlyingSymbolName(record.getName());
+                        log.debug("自动填充旧底层证券名称: {} (来自 {} 的交易记录)", record.getName(), event.getOldSymbol());
+                    }
+                });
     }
 }

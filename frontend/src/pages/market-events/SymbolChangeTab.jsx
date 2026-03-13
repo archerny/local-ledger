@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, message, Typography, Tooltip,
-  Modal, Form, Input, Select, DatePicker, Popconfirm, Row, Col, Space,
+  Modal, Form, Input, DatePicker, Popconfirm, Row, Col, Space,
 } from 'antd';
 import {
   ExclamationCircleOutlined,
@@ -49,29 +49,6 @@ const SymbolChangeTab = () => {
 
   const columns = [
     {
-      title: '证券代码',
-      dataIndex: 'symbol',
-      key: 'symbol',
-      width: 120,
-      render: (text) => <Text code>{text}</Text>,
-    },
-    {
-      title: '底层证券名称',
-      dataIndex: 'underlyingSymbolName',
-      key: 'underlyingSymbolName',
-      width: 140,
-      render: (text) => text || <Text type="secondary">-</Text>,
-    },
-    {
-      title: '币种',
-      dataIndex: 'currency',
-      key: 'currency',
-      width: 80,
-      render: (currency) => currency ? <Tag color={currencyColorMap[currency] || 'default'}>{currency}</Tag> : '-',
-      filters: currencyOptions.map((item) => ({ text: item.value, value: item.value })),
-      onFilter: (value, record) => record.currency === value,
-    },
-    {
       title: '事件日期',
       dataIndex: 'eventDate',
       key: 'eventDate',
@@ -87,11 +64,34 @@ const SymbolChangeTab = () => {
       render: (text) => <Text code style={{ color: '#ff4d4f' }}>{text}</Text>,
     },
     {
+      title: '旧证券名称',
+      dataIndex: 'underlyingSymbolName',
+      key: 'underlyingSymbolName',
+      width: 140,
+      render: (text) => text || <Text type="secondary">-</Text>,
+    },
+    {
       title: '新代码',
       dataIndex: 'newSymbol',
       key: 'newSymbol',
       width: 120,
       render: (text) => <Text code style={{ color: '#52c41a' }}>{text}</Text>,
+    },
+    {
+      title: '新证券名称',
+      dataIndex: 'newUnderlyingSymbolName',
+      key: 'newUnderlyingSymbolName',
+      width: 140,
+      render: (text) => text || <Text type="secondary">-</Text>,
+    },
+    {
+      title: '币种',
+      dataIndex: 'currency',
+      key: 'currency',
+      width: 80,
+      render: (currency) => currency ? <Tag color={currencyColorMap[currency] || 'default'}>{currency}</Tag> : '-',
+      filters: currencyOptions.map((item) => ({ text: item.value, value: item.value })),
+      onFilter: (value, record) => record.currency === value,
     },
     {
       title: '处理状态',
@@ -140,12 +140,10 @@ const SymbolChangeTab = () => {
   const handleEdit = (record) => {
     setEditingRecord(record);
     form.setFieldsValue({
-      symbol: record.symbol,
-      underlyingSymbolName: record.underlyingSymbolName,
-      currency: record.currency,
       eventDate: record.eventDate ? dayjs(record.eventDate) : null,
       oldSymbol: record.oldSymbol,
       newSymbol: record.newSymbol,
+      newUnderlyingSymbolName: record.newUnderlyingSymbolName,
       description: record.description,
     });
     setIsModalOpen(true);
@@ -241,23 +239,6 @@ const SymbolChangeTab = () => {
         <Form form={form} layout="vertical" style={{ marginTop: 20 }}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="证券代码" name="symbol" rules={[{ required: true, message: '请输入证券代码' }]}>
-                <Input placeholder="变更后的证券代码，如 META" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="底层证券名称" name="underlyingSymbolName">
-                <Input placeholder="底层证券名称（选填）" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="币种" name="currency">
-                <Select placeholder="请选择币种" options={currencyOptions} allowClear />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
               <Form.Item label="事件日期" name="eventDate" rules={[{ required: true, message: '请选择事件日期' }]}>
                 <DatePicker style={{ width: '100%' }} placeholder="请选择日期" />
               </Form.Item>
@@ -272,6 +253,13 @@ const SymbolChangeTab = () => {
             <Col span={12}>
               <Form.Item label="新代码" name="newSymbol" rules={[{ required: true, message: '请输入新代码' }]}>
                 <Input placeholder="变更后的证券代码，如 META" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="新底层证券名称" name="newUnderlyingSymbolName" rules={[{ required: true, message: '请输入新底层证券名称' }]}>
+                <Input placeholder="变更后的证券名称，如 Meta Platforms" />
               </Form.Item>
             </Col>
           </Row>
