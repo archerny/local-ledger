@@ -83,6 +83,7 @@ public class DividendInKindEventService {
      */
     @Transactional
     public DividendInKindEvent create(DividendInKindEvent event) {
+        autoFillFromExistingTradeRecord(event);
         DividendInKindEvent saved = dividendInKindEventRepository.save(event);
         log.info("Dividend-in-kind event saved: id={}, symbol={}, dividendSymbol={}, eventDate={}",
                 saved.getId(), saved.getSymbol(), saved.getDividendSymbol(), saved.getEventDate());
@@ -113,6 +114,7 @@ public class DividendInKindEventService {
         existing.setFairValuePerShare(eventData.getFairValuePerShare());
         existing.setDescription(eventData.getDescription());
 
+        autoFillFromExistingTradeRecord(existing);
         DividendInKindEvent saved = dividendInKindEventRepository.save(existing);
 
         // 级联重算：受影响 symbols 包含新旧所有 symbols
@@ -148,5 +150,32 @@ public class DividendInKindEventService {
         affectedSymbols.add(existing.getSymbol());
         affectedSymbols.add(existing.getDividendSymbol());
         marketEventProcessingService.processEventDeletion(affectedSymbols, existing.getEventDate());
+    }
+
+    /**
+     * Auto-fill currency and underlyingSymbolName from existing trade records of the symbol.
+     * Note: dividendSymbolName is NOT auto-filled here because the dividend symbol may have never been traded.
+     */
+    private void autoFillFromExistingTradeRecord(DividendInKindEvent event) {
+        String querySymbol = event.getSymbol();
+
+        var tradeRecordOpt = tradeRecordRepository.findFirstBySymbolAndIsDeletedFalseOrderByTradeDateDesc(querySymbol);
+
+        if (tradeRecordOpt.isPresent()) {
+            var record = tradeRecordOpt.get();
+            // Auto-fill currency
+            if (event.getCurrency() == null) {
+                event.setCurrency(record.getCurrency());
+                log.debug("Auto-filled currency: {} (from trade record of {})", record.getCurrency(), querySymbol);
+            }
+            // Auto-fill underlying symbol name
+            if (event.getUnderlyingSymbolName() == null || event.getUnderlyingSymbolName().isBlank()) {
+                event.setUnderlyingSymbolName(record.getName());
+                log.debug("Auto-filled underlyingSymbolName: '{}' (from trade record of {})", record.getName(), querySymbol);
+            }
+        } else {
+            log.error("Failed to auto-fill dividend-in-kind event: no trade record found for symbol='{}', aborting to prevent dirty data", querySymbol);
+            throw new IllegalArgumentException("No trade record found for symbol '" + querySymbol + "', cannot auto-fill currency and symbol name. Please create a trade record for this symbol first.");
+        }
     }
 }
