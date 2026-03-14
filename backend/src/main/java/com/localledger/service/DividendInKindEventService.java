@@ -83,6 +83,7 @@ public class DividendInKindEventService {
      */
     @Transactional
     public DividendInKindEvent create(DividendInKindEvent event) {
+        validateDividendCurrency(event);
         autoFillFromExistingTradeRecord(event);
         DividendInKindEvent saved = dividendInKindEventRepository.save(event);
         log.info("Dividend-in-kind event saved: id={}, symbol={}, dividendSymbol={}, eventDate={}",
@@ -110,7 +111,10 @@ public class DividendInKindEventService {
         existing.setEventDate(eventData.getEventDate());
         existing.setDividendSymbol(eventData.getDividendSymbol());
         existing.setDividendSymbolName(eventData.getDividendSymbolName());
-        existing.setDividendQtyPerShare(eventData.getDividendQtyPerShare());
+        validateDividendCurrency(eventData);
+        existing.setDividendCurrency(eventData.getDividendCurrency());
+        existing.setRatioFrom(eventData.getRatioFrom());
+        existing.setRatioTo(eventData.getRatioTo());
         existing.setFairValuePerShare(eventData.getFairValuePerShare());
         existing.setDescription(eventData.getDescription());
 
@@ -150,6 +154,15 @@ public class DividendInKindEventService {
         affectedSymbols.add(existing.getSymbol());
         affectedSymbols.add(existing.getDividendSymbol());
         marketEventProcessingService.processEventDeletion(affectedSymbols, existing.getEventDate());
+    }
+
+    /**
+     * Validate that dividendCurrency is provided (required field).
+     */
+    private void validateDividendCurrency(DividendInKindEvent event) {
+        if (event.getDividendCurrency() == null) {
+            throw new IllegalArgumentException("Dividend currency is required for dividend-in-kind events");
+        }
     }
 
     /**

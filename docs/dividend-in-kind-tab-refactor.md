@@ -98,7 +98,35 @@ private void autoFillFromExistingTradeRecord(DividendInKindEvent event) {
 | `underlyingSymbolName`（底层证券名称） | 改为后端自动填充 |
 | `currency`（币种） | 改为后端自动填充 |
 
-#### 3.3.3 重构后的表单结构
+#### 3.3.3 分红比例字段重设计
+
+实际操作中，实物分红的公告通常表述为 **"每 N 股派发 M 股"**，例如：
+
+> 每 21 股腾讯派发 1 股京东 A 类普通股
+
+而原方案使用单一字段 `dividendQtyPerShare`（每 1 股获得的分红数量）存在两个问题：
+
+1. **用户输入不自然**：用户需要自行换算 `1/21 = 0.047619...`，不直观且容易出错。
+2. **精度丢失**：`1/21` 是无限不循环小数，在持仓量大时计算结果会产生误差。
+
+**改进方案**：参考拆股事件的 `ratioFrom / ratioTo` 设计，将 `dividendQtyPerShare` 替换为两个整数字段：
+
+| 旧字段 | 新字段 | 含义 |
+|--------|--------|------|
+| `dividendQtyPerShare` | `ratioFrom` | 每持有多少股（如 21） |
+| — | `ratioTo` | 可获得多少股分红证券（如 1） |
+
+**计算逻辑**变为：
+
+```
+分红数量 = floor(持仓数量 × ratioTo / ratioFrom)   // 向下取整
+```
+
+以腾讯分红京东案例为例：
+- 持有 100 股腾讯，`ratioFrom=21`, `ratioTo=1`
+- 分红数量 = `floor(100 × 1 / 21)` = `floor(4.76)` = **4 股京东**
+
+#### 3.3.4 重构后的表单结构
 
 ```
 ┌─────────────────────────────────────────┐
@@ -110,8 +138,8 @@ private void autoFillFromExistingTradeRecord(DividendInKindEvent event) {
 │  [分红证券代码*]       [分红证券名称*]       │
 │  获得的分红证券代码     分红证券底层名称      │
 ├─────────────────────────────────────────┤
-│  [每股分红数量*]       [公允价格(每股)*]     │
-│  每持有1股获得的数量    分红证券的公允价格     │
+│  每[21]股 派发[1]股    [公允价格(每股)*]    │
+│  分红比例（整数）       分红证券的公允价格    │
 ├─────────────────────────────────────────┤
 │  [描述]                                   │
 │  事件描述（选填）                           │
@@ -128,11 +156,12 @@ private void autoFillFromExistingTradeRecord(DividendInKindEvent event) {
 | `eventDate` | ✅ | 事件日期 |
 | `dividendSymbol` | ✅ | 分红证券代码 |
 | `dividendSymbolName` | ✅ | 分红证券底层名称（需与交易记录 `name` 字段对齐） |
-| `dividendQtyPerShare` | ✅ | 每股分红数量 |
+| `ratioFrom` | ✅ | 每持有多少股（正整数） |
+| `ratioTo` | ✅ | 可获得多少股分红证券（正整数） |
 | `fairValuePerShare` | ✅ | 公允价格（每股） |
 | `description` | ❌ | 事件描述（选填） |
 
-#### 3.3.4 简化 Modal
+#### 3.3.5 简化 Modal
 
 - 标题固定为"新增实物分红事件"
 - 提交按钮固定为"提交"
@@ -148,8 +177,9 @@ private void autoFillFromExistingTradeRecord(DividendInKindEvent event) {
 
 | 文件 | 修改内容 |
 |------|---------|
-| `backend/.../service/DividendInKindEventService.java` | 新增 `autoFillFromExistingTradeRecord()` 方法；在 `create()` 和 `update()` 中调用 |
-| `frontend/.../market-events/DividendInKindTab.jsx` | 精简为仅新增模式；去掉编辑/删除；移除 `currency`、`underlyingSymbolName` 表单字段；保留 `dividendSymbolName` 为必填 |
+| `backend/.../entity/DividendInKindEvent.java` | 将 `dividendQtyPerShare` 字段替换为 `ratioFrom` 和 `ratioTo` 两个整数字段 |
+| `backend/.../service/DividendInKindEventService.java` | 新增 `autoFillFromExistingTradeRecord()` 方法；在 `create()` 和 `update()` 中调用；更新分红计算逻辑为 `floor(持仓 × ratioTo / ratioFrom)` |
+| `frontend/.../market-events/DividendInKindTab.jsx` | 精简为仅新增模式；去掉编辑/删除；移除 `currency`、`underlyingSymbolName` 表单字段；将 `dividendQtyPerShare` 输入替换为 `ratioFrom` / `ratioTo` 两个输入框；保留 `dividendSymbolName` 为必填 |
 
 ---
 

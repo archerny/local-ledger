@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, message, Typography, Tooltip,
-  Modal, Form, Input, DatePicker, InputNumber, Row, Col,
+  Modal, Form, Input, DatePicker, InputNumber, Row, Col, Select,
 } from 'antd';
 import {
   PlusOutlined,
@@ -92,11 +92,21 @@ const DividendInKindTab = () => {
       render: (text) => text || <Text type="secondary">-</Text>,
     },
     {
-      title: '每股分红数量',
-      dataIndex: 'dividendQtyPerShare',
-      key: 'dividendQtyPerShare',
-      width: 130,
-      render: (val) => <Tag color="purple">{val}</Tag>,
+      title: '分红币种',
+      dataIndex: 'dividendCurrency',
+      key: 'dividendCurrency',
+      width: 90,
+      render: (currency) => currency ? <Tag color={currencyColorMap[currency] || 'default'}>{currency}</Tag> : <Text type="secondary">-</Text>,
+      filters: currencyOptions.map((item) => ({ text: item.value, value: item.value })),
+      onFilter: (value, record) => record.dividendCurrency === value,
+    },
+    {
+      title: '分红比例',
+      key: 'ratio',
+      width: 160,
+      render: (_, record) => (
+        <Tag color="purple">每 {record.ratioFrom} 股派 {record.ratioTo} 股</Tag>
+      ),
     },
     {
       title: '公允价格',
@@ -205,21 +215,36 @@ const DividendInKindTab = () => {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item label="分红证券代码" name="dividendSymbol" rules={[{ required: true, message: '请输入分红证券代码' }]}>
                 <Input placeholder="获得的分红证券代码" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item label="分红证券名称" name="dividendSymbolName" rules={[{ required: true, message: '请输入分红证券名称' }]}>
                 <Input placeholder="分红证券底层名称" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="分红证券币种" name="dividendCurrency" rules={[{ required: true, message: '请选择分红证券币种' }]}>
+                <Select placeholder="请选择币种" options={currencyOptions} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="每股分红数量" name="dividendQtyPerShare" rules={[{ required: true, message: '请输入每股分红数量' }]}>
-                <InputNumber style={{ width: '100%' }} min={0} step={0.000001} precision={6} placeholder="每持有1股获得的分红数量" />
+              <Form.Item label="分红比例" required style={{ marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>每</span>
+                  <Form.Item name="ratioFrom" noStyle rules={[{ required: true, message: '请输入' }]}>
+                    <InputNumber style={{ width: 80 }} min={1} precision={0} placeholder="N" />
+                  </Form.Item>
+                  <span>股派</span>
+                  <Form.Item name="ratioTo" noStyle rules={[{ required: true, message: '请输入' }]}>
+                    <InputNumber style={{ width: 80 }} min={1} precision={0} placeholder="M" />
+                  </Form.Item>
+                  <span>股</span>
+                </div>
               </Form.Item>
             </Col>
             <Col span={12}>

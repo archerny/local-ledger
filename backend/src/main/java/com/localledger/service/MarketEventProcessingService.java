@@ -377,10 +377,10 @@ public class MarketEventProcessingService {
     // ============================================================
 
     /**
-     * 处理实物分红事件
-     * 对持有该 symbol 的每个券商，生成一条 dividendSymbol 的 BUY 记录
-     * 数量 = 持仓 × dividendQtyPerShare（向下取整）
-     * 价格 = fairValuePerShare
+     * Process dividend-in-kind event.
+     * For each broker holding the symbol, generate a BUY record for the dividendSymbol.
+     * Quantity = floor(holdingQty × ratioTo / ratioFrom)
+     * Price = fairValuePerShare
      */
     private List<TradeRecord> processDividendInKind(DividendInKindEvent event) {
         List<TradeRecord> records = new ArrayList<>();
@@ -402,10 +402,10 @@ public class MarketEventProcessingService {
         }
 
         for (PositionSnapshot position : relevantPositions) {
-            // 分红数量 = (int)(quantity × dividendQtyPerShare)，向下取整
+            // Dividend qty = floor(holdingQty × ratioTo / ratioFrom)
             int dividendQty = BigDecimal.valueOf(position.getQuantity())
-                    .multiply(event.getDividendQtyPerShare())
-                    .setScale(0, RoundingMode.FLOOR)
+                    .multiply(BigDecimal.valueOf(event.getRatioTo()))
+                    .divide(BigDecimal.valueOf(event.getRatioFrom()), 0, RoundingMode.FLOOR)
                     .intValue();
 
             if (dividendQty <= 0) {
@@ -428,7 +428,8 @@ public class MarketEventProcessingService {
             record.setPrice(fairValue);
             record.setAmount(amount);
             record.setFee(BigDecimal.ZERO);
-            record.setCurrency(event.getCurrency() != null ? event.getCurrency() : position.getCurrency());
+            // dividend_currency is a required field, use it directly for the dividend trade record
+            record.setCurrency(event.getDividendCurrency());
             record.setTradeTrigger(TradeTrigger.MARKET_EVENT);
             record.setTriggerRefId(event.getId());
             record.setTriggerRefType(TriggerRefType.DIVIDEND_IN_KIND);
